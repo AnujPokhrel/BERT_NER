@@ -7,7 +7,6 @@ import pandas as pd
 import sklearn
 import tensorflow as tf
 from scipy.special import softmax 
-from google.colab import drive
 from datetime import datetime
 import time
 from collections import Counter
@@ -33,14 +32,14 @@ def no_punctutation(word):
   
   return 1
 
-def no_stopwords(text):
+def no_stopwords(text, stopwords):
     if text in stopwords:
       return 0
     else:
       return 1
 
 #get individual sentences from the Data
-def sen_generator(filename):
+def sen_generator(filename, stopwords, wordnet_lemmatizer):
   f = open(filename, "r")
   sentences = []
   targets = []
@@ -54,7 +53,7 @@ def sen_generator(filename):
           sen = []
           t = []
       else:
-          if no_punctutation(word) and no_stopwords(word):
+          if no_punctutation(word) and no_stopwords(word, stopwords):
             target = line.split('\t')[1].strip('\n')
             sen.append(wordnet_lemmatizer.lemmatize(word.lower()))            
             # sen.append(word.lower())
@@ -104,7 +103,7 @@ def flat_accuracy(preds, labels):
     return np.sum(flat_preds == flat_labels)/len(flat_labels)
 
 #fn to train
-def train(epoch):
+def train(epoch, model, training_loader, device, optimizer):
     model.train()
     f1_scores = []
     for i,data in enumerate(training_loader, 0):
@@ -121,7 +120,7 @@ def train(epoch):
         optimizer.zero_grad()
         loss.backward()
 
-def get_scores(model, testing_loader):
+def get_scores(model, testing_loader, device):
     model.eval()
     eval_loss = 0; eval_accuracy = 0
     n_correct = 0; n_wrong = 0; total = 0
@@ -158,7 +157,7 @@ def get_scores(model, testing_loader):
         return [f1, eval_loss, validation_accuracy]
 
 #get f1 score, print accuracy and loss
-def get_ner_tokens(model, testing_loader):
+def get_ner_tokens(model, testing_loader, device):
     model.eval()
     pred_prob_list = []
     predictions , true_labels = [], []
@@ -211,14 +210,14 @@ def get_ner_tokens(model, testing_loader):
         # print(len())
         return selected_tokens_arr
 
-def wrapper_for_train(epochs):
+def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     # to train
     avg_time_for_epochs = 0
     total_time = 0
     for epoch in range(epochs):
         start = time.time()
         print(f"start of epoch {epoch} at {datetime.now().time()}")
-        train(epoch)
+        train(epoch, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {epoch} at {datetime.now().time()}")
         total_time = total_time + (end-start)
@@ -241,11 +240,11 @@ def start():
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator(TRAIN_PATH)
+    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_targets = train_generated[1]
 
-    test_generated = sen_generator(TEST_PATH)
+    test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
     test_sentences = test_generated[0]
     test_targets = test_generated[1]
 
@@ -281,14 +280,15 @@ def start():
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
 
     #train the model for x epochs
-    for i in range(5):
-        wrapper_for_train(10)
-        scores = get_scores(model, testing_loader)
+    for i in range(10):
+        wrapper_for_train(10, model, training_loader, device, optimizer)
+        scores = get_scores(model, testing_loader, device)
         file1 = open("scores_file.txt", 'a')
-        file1.write(f"After {i * 10} epochs \n")
-        file1.write(f"F1 score : {scores[0]}\n Validation Loss: {scores[1]} \n Validation Accuracy: {Scores[2]} \n")
+        file1.write(f"After {(i+1) * 10} epochs \n")
+        file1.write(f"F1 score : {scores[0]}\n Validation Loss: {scores[1]} \n Validation Accuracy: {scores[2]} \n")
+        file1.close()
     #to save the model
-    torch.save(model.state_dict(), "right_here")
+    torch.save(model.state_dict(), "100EpochsBioBio")
 
 
 

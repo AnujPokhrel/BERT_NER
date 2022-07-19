@@ -1,0 +1,40 @@
+After 10 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 20 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 30 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 40 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 50 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 60 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 70 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 80 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 90 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
+After 100 epochs 
+F1 score : 0.08951422178330708
+ Validation Loss: 1.286652217970954 
+ Validation Accuracy: 0.041891723356009124 
