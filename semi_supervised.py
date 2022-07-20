@@ -122,17 +122,8 @@ def train(epoch, model, training_loader, device, optimizer):
 
 def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     # to train
-    avg_time_for_epochs = 0
-    total_time = 0
     for epoch in range(epochs):
-        start = time.time()
-        print(f"start of epoch {epoch} at {datetime.now().time()}")
         train(epoch, model, training_loader, device, optimizer)
-        end = time.time()
-        print(f"end of epoch {epoch} at {datetime.now().time()}")
-        total_time = total_time + (end-start)
-        avg_time_for_epochs = (total_time)/(epoch + 1) 
-        print(f"average time for epochs: {avg_time_for_epochs}")
 
     print(f"total time taken was: {total_time}")
 
@@ -272,6 +263,8 @@ def start():
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
     f1_scores, length_of_train, length_of_test = [], [], []
 
+    avg_time_for_epochs = 0
+    total_time = 0
     for i in range(100):
         if i == 0:
             f1_scores .append([0])
@@ -307,7 +300,15 @@ def start():
         training_loader = DataLoader(training_set, **train_params)
         testing_loader =  DataLoader(testing_set, **test_params)
         
-        wrapper_for_train(2, model, training_loader, device, optimizer)
+        start = time.time()
+        print(f"start of epoch {i + 1} at {datetime.now().time()}")
+        wrapper_for_train(1, model, training_loader, device, optimizer)
+        end = time.time()
+        print(f"end of epoch {i + 1 } at {datetime.now().time()}")
+        total_time = total_time + (end-start)
+        avg_time_for_epochs = (total_time)/(i + 1) 
+        print(f"average time for epochs: {avg_time_for_epochs}")
+
         prob_dataset = get_new_dataset(model, testing_loader, device)
         f1_scores.append(prob_dataset[4])
         train_sentences.extend(prob_dataset[0])
@@ -323,6 +324,8 @@ def start():
     file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
     file1.write(f"Length of train: \n {length_of_train} \n\n\n")
     file1.write(f"Length of test: \n {length_of_test} \n\n\n")
+    file1.write(f"total time taken: {total_time} \n\n\n")
+    file1.write(f"average time for an epoch: {avg_time_for_epochs} \n\n\n")
     file1.close()
     
     file = open("end_test_sentences.txt", 'a')
