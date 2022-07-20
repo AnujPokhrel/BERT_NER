@@ -125,7 +125,6 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     for epoch in range(epochs):
         train(epoch, model, training_loader, device, optimizer)
 
-    print(f"total time taken was: {total_time}")
 
 #get f1 score, print accuracy and loss
 def get_new_dataset(model, testing_loader, device):
@@ -320,7 +319,7 @@ def start():
         #to save the model
     
     torch.save(model.state_dict(), "100EpochsBioBioSemiSuper")
-    file1 = open("semisuperdata.txt", 'a')
+    file1 = open("semisuperdata100.txt", 'a')
     file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
     file1.write(f"Length of train: \n {length_of_train} \n\n\n")
     file1.write(f"Length of test: \n {length_of_test} \n\n\n")
