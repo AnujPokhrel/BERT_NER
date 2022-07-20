@@ -247,7 +247,7 @@ def start():
     train_targets = train_generated[1]
     train_targets.extend(train_generated_1[1])
 
-    train_percent = 0.3
+    train_percent = 0.4
     train_size = int(train_percent*len(train_sentences))
 
     test_sentences = train_sentences[train_size:]
@@ -255,11 +255,30 @@ def start():
 
     train_sentences = train_sentences[0:train_size]
     train_targets = train_targets[0:train_size]
+
+    file = open("starting_test_sentences.txt", 'a')
+    for each in test_sentences:
+        file.write(f"{each} \n")
     
+    file.close()
+
+    file = open("starting_train_sentences.txt", 'a')
+    for each in train_sentences:
+        file.write(f"{each} \n")
+
+    file.close()
+    
+    #setting up the optimizer and the learning rate
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
     f1_scores, length_of_train, length_of_test = [], [], []
 
-    for i in range(16):
+    for i in range(100):
+        if i == 0:
+            f1_scores .append([0])
+        
+        length_of_train.append(len(train_sentences))
+        length_of_test.append(len(test_sentences))
+
         training_set = CustomDataset(
             tokenizer=tokenizer,
             sentences=train_sentences,
@@ -287,13 +306,6 @@ def start():
 
         training_loader = DataLoader(training_set, **train_params)
         testing_loader =  DataLoader(testing_set, **test_params)
-
-        #setting up the optimizer and the learning rate
-        
-
-        #train the model for x epochs
-        if i == 0:
-            wrapper_for_train(18, model, training_loader, device, optimizer)
         
         wrapper_for_train(2, model, training_loader, device, optimizer)
         prob_dataset = get_new_dataset(model, testing_loader, device)
@@ -306,14 +318,24 @@ def start():
         length_of_test.append(len(test_sentences))
         #to save the model
     
-    torch.save(model.state_dict(), "50EpochsBioBioSemiSuper")
+    torch.save(model.state_dict(), "100EpochsBioBioSemiSuper")
     file1 = open("semisuperdata.txt", 'a')
     file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
     file1.write(f"Length of train: \n {length_of_train} \n\n\n")
     file1.write(f"Length of test: \n {length_of_test} \n\n\n")
     file1.close()
     
+    file = open("end_test_sentences.txt", 'a')
+    for each in test_sentences:
+        file.write(f"{each} \n")
 
+    file.close()
+
+    file = open("end_train_sentences.txt", 'a')
+    for each in train_sentences:
+        file.write(f"{each} \n")
+
+    file.close()
 
 
 if __name__=="__main__":
