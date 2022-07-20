@@ -137,7 +137,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     print(f"total time taken was: {total_time}")
 
 #get f1 score, print accuracy and loss
-def get_new_dataset(model, testing_loader):
+def get_new_dataset(model, testing_loader, device):
     model.eval()
     eval_loss = 0; eval_accuracy = 0
     n_correct = 0; n_wrong = 0; total = 0
@@ -240,8 +240,8 @@ def start():
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator("/content/drive/MyDrive/NERdata/BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_1 = sen_generator("/content/drive/MyDrive/NERdata/BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
+    train_generated_1 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_sentences.extend(train_generated_1[0])
     train_targets = train_generated[1]
@@ -259,7 +259,7 @@ def start():
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
     f1_scores, length_of_train, length_of_test = [], [], []
 
-    for i in range(2):
+    for i in range(16):
         training_set = CustomDataset(
             tokenizer=tokenizer,
             sentences=train_sentences,
@@ -293,24 +293,24 @@ def start():
 
         #train the model for x epochs
         if i == 0:
-            wrapper_for_train(1, model, training_loader, device, optimizer)
+            wrapper_for_train(18, model, training_loader, device, optimizer)
         
-        wrapper_for_train(1, model, training_loader, device, optimizer)
-        prob_dataset = get_new_dataset(model, testing_loader)
+        wrapper_for_train(2, model, training_loader, device, optimizer)
+        prob_dataset = get_new_dataset(model, testing_loader, device)
         f1_scores.append(prob_dataset[4])
-        length_of_train.append(len(prob_dataset[0]))
-        length_of_test.append(len(prob_dataset[2]))
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
         test_sentences = prob_dataset[2]
         test_targets = prob_dataset[3]
+        length_of_train.append(len(train_sentences))
+        length_of_test.append(len(test_sentences))
         #to save the model
     
     torch.save(model.state_dict(), "50EpochsBioBioSemiSuper")
     file1 = open("semisuperdata.txt", 'a')
-    file1.write(f"F1 Scores array: \n{f1_scores}\n\n\n\n")
-    file1.write(f"Length of train: \n {length_of_train}\n\n\n")
-    file1.write(f"Length of test: \n {length_of_test}\n\n\n")
+    file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
+    file1.write(f"Length of train: \n {length_of_train} \n\n\n")
+    file1.write(f"Length of test: \n {length_of_test} \n\n\n")
     file1.close()
     
 

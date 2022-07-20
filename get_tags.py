@@ -158,7 +158,7 @@ def start():
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    model.load_state_dict(torch.load("100epochBioBio"))
+    model.load_state_dict(torch.load("100EpochsBioBio"))
 
     nltk.download('stopwords')
     nltk.download('wordnet')
@@ -192,7 +192,7 @@ def start():
 
     file1 = open("Ner_tokens.txt", 'a')
     for en, each in enumerate(ner_tokens):
-        file1.write(f"{tokenizer.decode(each)}")
+        file1.write(f"{tokenizer.decode(each)} \n")
         
     file1.close()
 
