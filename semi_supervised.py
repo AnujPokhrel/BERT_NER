@@ -222,17 +222,11 @@ def start():
     wordnet_lemmatizer = WordNetLemmatizer()
 
     train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_3 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_2 = sen_generator("BC4CHEMD/test.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_1 = sen_generator("BC4CHEMD/train.tsv", stopwords, wordnet_lemmatizer)
+    train_generated_1 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_sentences.extend(train_generated_1[0])
-    train_sentences.extend(train_generated_2[0])
-    train_sentences.extend(train_generated_3[0])
     train_targets = train_generated[1]
     train_targets.extend(train_generated_1[1])
-    train_targets.extend(train_generated_2[1])
-    train_targets.extend(train_generated_3[1])
 
     train_percent = 0.3
     train_size = int(train_percent*len(train_sentences))
@@ -255,6 +249,8 @@ def start():
 
     file.close()
     
+    print(len(train_sentences))
+    print(len(test_sentences))
     #setting up the optimizer and the learning rate
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5) 
     
