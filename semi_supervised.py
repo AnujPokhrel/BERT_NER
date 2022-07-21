@@ -187,7 +187,7 @@ def get_new_dataset(model, testing_loader, device, test_targets):
                 if len(max_val) != 0:
                     average_max_val = sum(max_val)/len(max_val)
                 
-                if average_max_val > 0.5:
+                if average_max_val > 0.45:
                     for_train_sentences.append(test_sentences[outer_index])
                     for_train_targets.append(test_target_temp)
                 else: 
@@ -258,7 +258,7 @@ def start():
     total_time = 0
     result_dict = {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
-    for i in range(200):
+    for i in range(50):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
 
@@ -312,7 +312,7 @@ def start():
         
         
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
-    file1 = open("semisuperdata200.txt", 'a')
+    file1 = open("semisuperdata50_7_21_11_35.txt", 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n\n total time taken: {total_time} \n\n\n")
     file1.write(f"average time for an epoch: {avg_time_for_epochs} \n\n\n")
