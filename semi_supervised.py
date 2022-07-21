@@ -210,8 +210,9 @@ def get_new_dataset(model, testing_loader, device, test_targets):
 def start():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    MODEL_NAME = 'dmis-lab/biobert-v1.1'
+    # MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
+    MODEL_NAME = "bert-base-cased"
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -221,21 +222,13 @@ def start():
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_1 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    train_generated = sen_generator("BC4CHEMD/train.tsv", stopwords, wordnet_lemmatizer)
+    test_generated = sen_generator("BC4CHEMD/test.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
-    train_sentences.extend(train_generated_1[0])
     train_targets = train_generated[1]
-    train_targets.extend(train_generated_1[1])
-
-    train_percent = 0.3
-    train_size = int(train_percent*len(train_sentences))
-
-    test_sentences = train_sentences[train_size:]
-    test_targets = train_targets[train_size:]
-
-    train_sentences = train_sentences[0:train_size]
-    train_targets = train_targets[0:train_size]
+    
+    test_sentences = test_generated[0]
+    test_targets = test_generated[1]
 
     file = open("starting_test_sentences.txt", 'a')
     for each in test_sentences:
@@ -258,7 +251,7 @@ def start():
     total_time = 0
     result_dict = {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
-    for i in range(50):
+    for i in range(5):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
 
@@ -282,8 +275,8 @@ def start():
                         'num_workers': 0
                         }
 
-        test_params = {'batch_size': 16,
-                        'shuffle': False,
+        test_params = {'batch_size': 2,
+                        'shuffle': True,
                         'num_workers': 0
                         }
 
@@ -292,7 +285,7 @@ def start():
         
         start = time.time()
         print(f"start of epoch {i + 1} at {datetime.now().time()}")
-        wrapper_for_train(1, model, training_loader, device, optimizer)
+        wrapper_for_train(10, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {i + 1 } at {datetime.now().time()}")
         total_time = total_time + (end-start)
@@ -312,19 +305,19 @@ def start():
         
         
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
-    file1 = open("semisuperdata50_7_21_11_35.txt", 'w')
+    file1 = open("semisuperdatabertbased50_7_21_15_58.txt", 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n\n total time taken: {total_time} \n\n\n")
     file1.write(f"average time for an epoch: {avg_time_for_epochs} \n\n\n")
     file1.close()
     
-    file = open("end_test_sentences.txt", 'a')
+    file = open("end_test_sentences.txt", 'w')
     for each in test_sentences:
         file.write(f"{each} \n")
 
     file.close()
 
-    file = open("end_train_sentences.txt", 'a')
+    file = open("end_train_sentences.txt", 'w')
     for each in train_sentences:
         file.write(f"{each} \n")
 
