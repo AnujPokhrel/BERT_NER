@@ -115,7 +115,7 @@ def train(epoch, model, training_loader, device, optimizer):
 
         # optimizer.zero_grad()
         if i%300==0:
-            print(f'Epoch: {epoch}, Loss:  {loss.item()}')
+            print(f'Loss:  {loss.item()}')
         
         optimizer.zero_grad()
         loss.backward()
@@ -127,7 +127,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
 
 
 #get f1 score, print accuracy and loss
-def get_new_dataset(model, testing_loader, device):
+def get_new_dataset(model, testing_loader, device, test_targets):
     model.eval()
     eval_loss = 0; eval_accuracy = 0
     n_correct = 0; n_wrong = 0; total = 0
@@ -142,18 +142,15 @@ def get_new_dataset(model, testing_loader, device):
             mask = data['mask'].to(device)
             targets = data['tags'].to(device)
             test_sentences = data['sentences']
-            # test_targets = data['o_tags']
 
             output = model(ids, mask, labels=targets)
             loss, logits = output[:2]
             logits = logits.detach().cpu().numpy()
             label_ids = targets.to('cpu').numpy()
 
-            # print(label_ids)
             no_of_words_array = []
             no_of_words = 0
             for x in enumerate(mask.cpu().numpy()):
-                # print(x)
                 for each in x[1]:
                     if each == 1:
                         no_of_words+= 1
@@ -174,33 +171,23 @@ def get_new_dataset(model, testing_loader, device):
             nb_eval_steps += 1
 
             for outer_index, array_list in enumerate(pred_prob):
-                average_max_val, max_val, no_of_words_for_index = 0, 0, 0
+                max_val = []
+                average_max_val, no_of_words_for_index = 0, 0
                 test_target_temp = []
                 for inner_index, x in enumerate(array_list):
-                    # print(inner_index)
-                    # print(no_of_words_array[outer_index])
                     try:
                         if (inner_index <= no_of_words_array[outer_index]):
-                            # print(array_list[1])
-                            max_val = max_val + np.max(array_list[1])
+                            max_val.append(np.max(array_list[1]))
                             test_target_temp.append(test_targets[outer_index][inner_index])
                         else:
-                            no_of_words_for_index = no_of_words_array[outer_index]
                             break
                     except:
                         break
                 
-                if no_of_words_for_index != 0:
-                    average_max_val = max_val/no_of_words_for_index
-
-                average_max_val_list.append(average_max_val)
+                if len(max_val) != 0:
+                    average_max_val = sum(max_val)/len(max_val)
                 
                 if average_max_val > 0.5:
-                    # print("Here we go")
-                    # print(f"{test_sentences[outer_index]}")
-                    # print(average_max_val)
-                    # print(f"{targets[outer_index]}")
-                    # print(f"{pred_prob[outer_index]}")
                     for_train_sentences.append(test_sentences[outer_index])
                     for_train_targets.append(test_target_temp)
                 else: 
@@ -215,9 +202,10 @@ def get_new_dataset(model, testing_loader, device):
 
         pred_tags = [p_i for p in predictions for p_i in p]
         valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
-        f1 = f1_score(valid_tags, pred_tags, average=None)
+        f1 = f1_score(valid_tags, pred_tags, average='macro')
+        scores = {'f1_score': f1, 'validation_accuracy': eval_loss, 'validation_loss': validation_accuracy}
 
-        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, [f1, eval_loss, validation_accuracy], average_max_val_list]
+        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, scores]
 
 def start():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -234,13 +222,19 @@ def start():
     wordnet_lemmatizer = WordNetLemmatizer()
 
     train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    train_generated_1 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    train_generated_3 = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    train_generated_2 = sen_generator("BC4CHEMD/test.tsv", stopwords, wordnet_lemmatizer)
+    train_generated_1 = sen_generator("BC4CHEMD/train.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_sentences.extend(train_generated_1[0])
+    train_sentences.extend(train_generated_2[0])
+    train_sentences.extend(train_generated_3[0])
     train_targets = train_generated[1]
     train_targets.extend(train_generated_1[1])
+    train_targets.extend(train_generated_2[1])
+    train_targets.extend(train_generated_3[1])
 
-    train_percent = 0.4
+    train_percent = 0.3
     train_size = int(train_percent*len(train_sentences))
 
     test_sentences = train_sentences[train_size:]
@@ -262,17 +256,15 @@ def start():
     file.close()
     
     #setting up the optimizer and the learning rate
-    optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
-    f1_scores, length_of_train, length_of_test = [], [], []
-
+    optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5) 
+    
     avg_time_for_epochs = 0
     total_time = 0
-    for i in range(3):
-        if i == 0:
-            f1_scores .append([0])
-        
-        length_of_train.append(len(train_sentences))
-        length_of_test.append(len(test_sentences))
+    result_dict = {}
+    result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
+    for i in range(200):
+        temp_dict = {}
+        dict_name = 'epoch' + str(i)
 
         training_set = CustomDataset(
             tokenizer=tokenizer,
@@ -304,33 +296,29 @@ def start():
         
         start = time.time()
         print(f"start of epoch {i + 1} at {datetime.now().time()}")
-        wrapper_for_train(2, model, training_loader, device, optimizer)
+        wrapper_for_train(1, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {i + 1 } at {datetime.now().time()}")
         total_time = total_time + (end-start)
         avg_time_for_epochs = (total_time)/(i + 1) 
         print(f"average time for epochs: {avg_time_for_epochs}")
 
-        prob_dataset = get_new_dataset(model, testing_loader, device)
-        f1_scores.append(prob_dataset[4])
+        prob_dataset = get_new_dataset(model, testing_loader, device, test_targets)
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
         test_sentences = prob_dataset[2]
         test_targets = prob_dataset[3]
-        length_of_train.append(len(train_sentences))
-        length_of_test.append(len(test_sentences))
-        file2 = open("prediction_probalbiliy.txt", 'a')
-        file2.write(f"\n\n\n\nfor {2} loop ")
-        file2.write(f"{prob_dataset[5]}")
-        file2.close()
-        #to save the model
-    
-    # torch.save(model.state_dict(), "100EpochsBioBioSemiSuper")
-    file1 = open("semisuperdata100.txt", 'a')
-    file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
-    file1.write(f"Length of train: \n {length_of_train} \n\n\n")
-    file1.write(f"Length of test: \n {length_of_test} \n\n\n")
-    file1.write(f"total time taken: {total_time} \n\n\n")
+        
+        temp_dict['scores'] = prob_dataset[4]
+        temp_dict['length_of_train'] = len(train_sentences)
+        temp_dict['length_of_test'] = len(test_sentences)
+        result_dict[dict_name] = temp_dict
+        
+        
+    # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
+    file1 = open("semisuperdata200.txt", 'a')
+    file1.write(f"{result_dict}")
+    file1.write(f"\n\n\n total time taken: {total_time} \n\n\n")
     file1.write(f"average time for an epoch: {avg_time_for_epochs} \n\n\n")
     file1.close()
     
