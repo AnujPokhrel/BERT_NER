@@ -135,6 +135,7 @@ def get_new_dataset(model, testing_loader, device):
     predictions , true_labels = [], []
     new_test_sentences, new_test_targets, for_train_sentences, for_train_targets = [], [], [], []
     nb_eval_steps, nb_eval_examples = 0, 0
+    average_max_val_list = []
     with torch.no_grad():
         for _, data in enumerate(testing_loader, 0):
             ids = data['ids'].to(device)
@@ -192,6 +193,8 @@ def get_new_dataset(model, testing_loader, device):
                 if no_of_words_for_index != 0:
                     average_max_val = max_val/no_of_words_for_index
 
+                average_max_val_list.append(average_max_val)
+                
                 if average_max_val > 0.5:
                     # print("Here we go")
                     # print(f"{test_sentences[outer_index]}")
@@ -214,7 +217,7 @@ def get_new_dataset(model, testing_loader, device):
         valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
         f1 = f1_score(valid_tags, pred_tags, average=None)
 
-        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, [f1, eval_loss, validation_accuracy], pred_prob_list]
+        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, [f1, eval_loss, validation_accuracy], average_max_val_list]
 
 def start():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -318,7 +321,7 @@ def start():
         length_of_test.append(len(test_sentences))
         file2 = open("prediction_probalbiliy.txt", 'a')
         file2.write(f"\n\n\n\nfor {2} loop ")
-        file2.write(prob_dataset[5])
+        file2.write(f"{prob_dataset[5]}")
         file2.close()
         #to save the model
     
