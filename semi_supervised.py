@@ -214,7 +214,7 @@ def get_new_dataset(model, testing_loader, device):
         valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
         f1 = f1_score(valid_tags, pred_tags, average=None)
 
-        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, [f1, eval_loss, validation_accuracy]]
+        return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, [f1, eval_loss, validation_accuracy], pred_prob_list]
 
 def start():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -264,7 +264,7 @@ def start():
 
     avg_time_for_epochs = 0
     total_time = 0
-    for i in range(100):
+    for i in range(3):
         if i == 0:
             f1_scores .append([0])
         
@@ -301,7 +301,7 @@ def start():
         
         start = time.time()
         print(f"start of epoch {i + 1} at {datetime.now().time()}")
-        wrapper_for_train(1, model, training_loader, device, optimizer)
+        wrapper_for_train(2, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {i + 1 } at {datetime.now().time()}")
         total_time = total_time + (end-start)
@@ -316,9 +316,13 @@ def start():
         test_targets = prob_dataset[3]
         length_of_train.append(len(train_sentences))
         length_of_test.append(len(test_sentences))
+        file2 = open("prediction_probalbiliy.txt", 'a')
+        file2.write(f"\n\n\n\nfor {2} loop ")
+        file2.write(prob_dataset[5])
+        file2.close()
         #to save the model
     
-    torch.save(model.state_dict(), "100EpochsBioBioSemiSuper")
+    # torch.save(model.state_dict(), "100EpochsBioBioSemiSuper")
     file1 = open("semisuperdata100.txt", 'a')
     file1.write(f"F1 Scores array: \n {f1_scores} \n\n\n\n")
     file1.write(f"Length of train: \n {length_of_train} \n\n\n")
