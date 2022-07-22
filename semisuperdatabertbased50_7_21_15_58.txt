@@ -1,9 +1,0 @@
-{'epoch-1': {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': 12574, 'length_of_test': 5038}, 'epoch0': {'scores': {'f1_score': 0.37736677539043767, 'validation_accuracy': 0.9561323729772416, 'validation_loss': 0.8220571145124719}, 'length_of_train': 14082, 'length_of_test': 3530}, 'epoch1': {'scores': {'f1_score': 0.37546511614128814, 'validation_accuracy': 0.9602502325541293, 'validation_loss': 0.8207446266968328}, 'length_of_train': 14082, 'length_of_test': 3530}, 'epoch2': {'scores': {'f1_score': 0.37284315145238844, 'validation_accuracy': 0.9600592433597168, 'validation_loss': 0.8211351809954752}, 'length_of_train': 14082, 'length_of_test': 3530}, 'epoch3': {'scores': {'f1_score': 0.37284315145238844, 'validation_accuracy': 0.9600592433597168, 'validation_loss': 0.8211351809954752}, 'length_of_train': 14082, 'length_of_test': 3530}, 'epoch4': {'scores': {'f1_score': 0.37284315145238844, 'validation_accuracy': 0.9600592433597168, 'validation_loss': 0.8211351809954752}, 'length_of_train': 14082, 'length_of_test': 3530}}
-
-
- total time taken: 746.5909159183502 
-
-
-average time for an epoch: 149.31818318367004 
-
-

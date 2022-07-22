@@ -1,3 +1,4 @@
+from ossaudiodev import SNDCTL_COPR_SENDMSG
 import transformers
 import torch
 from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampler
@@ -14,6 +15,7 @@ from sklearn.metrics import precision_recall_fscore_support
 import string
 import nltk
 from nltk.stem import WordNetLemmatizer
+import sys
 
 #converting B,I and O to numerical values
 def tag_converter(t):
@@ -137,17 +139,46 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     
     print(f"total time taken : {total_time}")
 
+def get_scores(model, testing_loader, device):
+    model.eval()
+    eval_loss = 0; eval_accuracy = 0
+    predictions , true_labels = [], []
+    nb_eval_steps, nb_eval_examples = 0, 0
+    with torch.no_grad():
+        for _, data in enumerate(testing_loader, 0):
+            ids = data['ids'].to(device)
+            mask = data['mask'].to(device)
+            targets = data['tags'].to(device)
+
+            output = model(ids, mask, labels=targets)
+            loss, logits = output[:2]
+            logits = logits.detach().cpu().numpy()
+            label_ids = targets.to('cpu').numpy()
+            predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
+            true_labels.append(label_ids)
+            accuracy = flat_accuracy(logits, label_ids)
+            eval_loss += loss.mean().item()
+            eval_accuracy += accuracy
+            nb_eval_examples += ids.size(0)
+            nb_eval_steps += 1        
+        eval_loss = eval_loss/nb_eval_steps
+        validation_accuracy = eval_accuracy/nb_eval_steps
+        print("Validation loss: {}".format(eval_loss))
+        print("Validation Accuracy: {}".format(eval_accuracy/nb_eval_steps))
+        pred_tags = [p_i for p in predictions for p_i in p]
+        valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
+        f1 = f1_score(valid_tags, pred_tags, average='macro')
+        scores = {'f1_score': f1, 'validation_accuracy': eval_loss, 'validation_loss': validation_accuracy}
+        return scores
+
 
 #get f1 score, print accuracy and loss
 def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold):
     model.eval()
     eval_loss = 0; eval_accuracy = 0
-    n_correct = 0; n_wrong = 0; total = 0
-    pred_prob_list = []
     predictions , true_labels = [], []
     new_test_sentences, new_test_targets, for_train_sentences, for_train_targets = [], [], [], []
     nb_eval_steps, nb_eval_examples = 0, 0
-    average_max_val_list = []
     with torch.no_grad():
         for _, data in enumerate(testing_loader, 0):
             ids = data['ids'].to(device)
@@ -173,7 +204,6 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
             
             pred_prob = [list(pp) for pp in softmax(logits, axis=-1)]
             
-            pred_prob_list.extend(pred_prob)
             predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
             true_labels.append(label_ids)
             accuracy = flat_accuracy(logits, label_ids)
@@ -219,7 +249,7 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
 
         return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets, scores]
 
-def start():
+def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"The device is sss: {device}")
     MODEL_NAME = 'dmis-lab/biobert-v1.1'
@@ -242,26 +272,36 @@ def start():
     test_sentences = test_generated[0]
     test_targets = test_generated[1]
 
-    file = open("starting_test_sentences.txt_18", 'w')
-    for each in test_sentences:
-        file.write(f"{each} \n")
-    
-    file.close()
+    validation_percent = 0.9
+    validation_size = int(validation_percent * len(train_sentences))
+    validation_sentences = train_sentences[validation_size:]
+    validation_targets = train_targets[valiation_size:]
 
-    file = open("starting_train_sentences.txt_18", 'w')
-    for each in train_sentences:
-        file.write(f"{each} \n")
-
-    file.close()
+    train_sentences = train_sentences[0:validation_size]
+    train_targets = train_targets[0:validation_size]
     
     print(len(train_sentences))
     print(len(test_sentences))
     #setting up the optimizer and the learning rate
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=1e-5) 
+
+    validation_set = CustomDataset(
+            tokenizer=tokenizer,
+            sentences=validation_sentences,
+            labels=validation_targets, 
+            max_len=200
+    )
     
-    result_dict = {}
+    validation_params = {'batch_size': 16,
+                    'shuffle': False,
+                    'num_workers': 0
+                    }
+    
+    validation_loader =  DataLoader(validation_set, **validation_params)
+
+    result_dict, validation_dict = {}, {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
-    for i in range(3):
+    for i in range(LOOPS):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
 
@@ -293,12 +333,9 @@ def start():
         training_loader = DataLoader(training_set, **train_params)
         testing_loader =  DataLoader(testing_set, **test_params)
         
-        #if i == 0:
-        prob_threshold = 0.45
+        wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
 
-        wrapper_for_train(20, model, training_loader, device, optimizer)
-
-        prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
+        prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, PROB_THRES)
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
         test_sentences = prob_dataset[2]
@@ -308,25 +345,37 @@ def start():
         temp_dict['length_of_train'] = len(train_sentences)
         temp_dict['length_of_test'] = len(test_sentences)
         result_dict[dict_name] = temp_dict
-        
+
+        validation_dict[dict_name] = get_scores(model, validation_loader, device)
         
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
-    file1 = open("semisuperdatabertbased160_7_21_235.txt", 'w')
+    file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
     file1.close()
-    
-    file = open("end_test_sentences.txt_18", 'w')
-    for each in test_sentences:
-        file.write(f"{each} \n")
 
-    file.close()
-
-    file = open("end_train_sentences.txt_18", 'w')
-    for each in train_sentences:
-        file.write(f"{each} \n")
-
-    file.close()
+    file1 = open(VALIDATION_OTPT, "w")
+    file1.write(f"{validation_dict}")
+    file1.close()
 
 
 if __name__=="__main__":
-    start()
+    LOOPS = 0
+    EPOCHS = 0
+    SEMI_SUP_OTPT = 'semisuper_output.txt'
+    VALIDATION_OTPT = 'validation_output.txt'
+    PROB_THRES = 0.45
+    try:
+        LOOPS = sys.argv[1]
+        EPOCHS = sys.argv[2]
+        SEMI_SUP_OTPT = sys.argv[3]
+        VALIDATION_OTPT = sys.argv[4]
+        PROB_THRES = sys.argv[5]
+    except IndexError:
+        print("5 Arguments needed\n")
+        print("1) No of Loops\n")
+        print("2) No of Epochs\n")
+        print("3) Outputfile for Semisupervised data\n")
+        print("4) Outputfile for valiation scores data\n")
+        print("5) Probability threshold\n")
+        sys.exit()
+    start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES)
