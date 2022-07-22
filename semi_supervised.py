@@ -116,15 +116,26 @@ def train(epoch, model, training_loader, device, optimizer):
 
         # optimizer.zero_grad()
         if i%300==0:
-            print(f'Loss:  {loss.item()}')
+            print(f'Epoch: {epoch} Loss:  {loss.item()}')
         
         optimizer.zero_grad()
         loss.backward()
 
 def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     # to train
+    avg_time_for_epochs = 0
+    total_time = 0
     for epoch in range(epochs):
+        start = time.time()
+        print(f"start of epoch {epoch} at {datetime.now().time()}")
         train(epoch, model, training_loader, device, optimizer)
+        end = time.time()
+        print(f"end of epoch {epoch} at {datetime.now().time()}")
+        total_time = total_time + (end-start)
+        avg_time_for_epochs = total_time/(epoch + 1)
+        print(f"avg time for epochs: {avg_time_for_epochs}")
+    
+    print(f"total time taken : {total_time}")
 
 
 #get f1 score, print accuracy and loss
@@ -211,9 +222,9 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
 def start():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"The device is sss: {device}")
-    # MODEL_NAME = 'dmis-lab/biobert-v1.1'
+    MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
-    MODEL_NAME = 'bert-base-cased'
+    #MODEL_NAME = 'bert-base-cased'
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -248,11 +259,9 @@ def start():
     #setting up the optimizer and the learning rate
     optimizer = torch.optim.Adam(params =  model.parameters(), lr=1e-5) 
     
-    avg_time_for_epochs = 0
-    total_time = 0
     result_dict = {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
-    for i in range(20):
+    for i in range(3):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
 
@@ -284,21 +293,10 @@ def start():
         training_loader = DataLoader(training_set, **train_params)
         testing_loader =  DataLoader(testing_set, **test_params)
         
-        if i == 0:
-            prob_threshold = 0.5
-        elif (i > 0 and i < 10):
-            prob_threshold = 0.45
-        else:
-            prob_threshold = 0.4
+        #if i == 0:
+        prob_threshold = 0.45
 
-        start = time.time()
-        print(f"start of epoch {i + 1} at {datetime.now().time()}")
-        wrapper_for_train(1, model, training_loader, device, optimizer)
-        end = time.time()
-        print(f"end of epoch {i + 1 } at {datetime.now().time()}")
-        total_time = total_time + (end-start)
-        avg_time_for_epochs = (total_time)/(i + 1) 
-        print(f"average time for epochs: {avg_time_for_epochs}")
+        wrapper_for_train(20, model, training_loader, device, optimizer)
 
         prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
         train_sentences.extend(prob_dataset[0])
@@ -313,10 +311,8 @@ def start():
         
         
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
-    file1 = open("semisuperdatabertbased50_7_21_18_22.txt", 'w')
+    file1 = open("semisuperdatabertbased160_7_21_235.txt", 'w')
     file1.write(f"{result_dict}")
-    file1.write(f"\n\n\n total time taken: {total_time} \n\n\n")
-    file1.write(f"average time for an epoch: {avg_time_for_epochs} \n\n\n")
     file1.close()
     
     file = open("end_test_sentences.txt_18", 'w')
