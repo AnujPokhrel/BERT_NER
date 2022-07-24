@@ -275,7 +275,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     validation_percent = 0.9
     validation_size = int(validation_percent * len(train_sentences))
     validation_sentences = train_sentences[validation_size:]
-    validation_targets = train_targets[valiation_size:]
+    validation_targets = train_targets[validation_size:]
 
     train_sentences = train_sentences[0:validation_size]
     train_targets = train_targets[0:validation_size]
@@ -365,11 +365,16 @@ if __name__=="__main__":
     VALIDATION_OTPT = 'validation_output.txt'
     PROB_THRES = 0.45
     try:
-        LOOPS = sys.argv[1]
-        EPOCHS = sys.argv[2]
+        LOOPS = int(sys.argv[1])
+        EPOCHS = int(sys.argv[2])
         SEMI_SUP_OTPT = sys.argv[3]
         VALIDATION_OTPT = sys.argv[4]
-        PROB_THRES = sys.argv[5]
+        PROB_THRES = float(sys.argv[5])
+        print(LOOPS, type(LOOPS))
+        print(EPOCHS, type(EPOCHS))
+        print(SEMI_SUP_OTPT, type(SEMI_SUP_OTPT))
+        print(VALIDATION_OTPT, type(VALIDATION_OTPT))
+        print(PROB_THRES, type(PROB_THRES))
     except IndexError:
         print("5 Arguments needed\n")
         print("1) No of Loops\n")
