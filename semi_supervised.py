@@ -351,10 +351,12 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
+    file1.write(f"\n\n {LOOPS} {EPOCHS} {SEMI_SUP_OTPT} {VALIDATION_OTPT} {PROB_THRES}")
     file1.close()
 
     file1 = open(VALIDATION_OTPT, "w")
     file1.write(f"{validation_dict}")
+    file1.write(f"\n\n {LOOPS} {EPOCHS} {SEMI_SUP_OTPT} {VALIDATION_OTPT} {PROB_THRES}")
     file1.close()
 
 
