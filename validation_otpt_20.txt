@@ -1,0 +1,8 @@
+{'epoch0': {'f1_score': 0.28617439484903234, 'validation_accuracy': 0.9730119576937035, 'validation_loss': 0.656573575949367}, 'epoch1': {'f1_score': 0.28617439484903234, 'validation_accuracy': 0.9730119576937035, 'validation_loss': 0.656573575949367}, 'epoch2': {'f1_score': 0.28617439484903234, 'validation_accuracy': 0.9730119576937035, 'validation_loss': 0.656573575949367}, 'epoch3': {'f1_score': 0.28617439484903234, 'validation_accuracy': 0.9730119576937035, 'validation_loss': 0.656573575949367}}
+
+ Loops: 4
+ Epochs: 5 
+ semi_sup_otpt_20.txt
+ validation_otpt_20.txt
+Probability Threshold: 0.45
+ Model: dmis-lab/biobert-v1.1

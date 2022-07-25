@@ -1,0 +1,8 @@
+{'epoch-1': {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': 11316, 'length_of_test': 5038}, 'epoch0': {'scores': {'f1_score': 0.28648910977881353, 'validation_accuracy': 0.9743700398339166, 'validation_loss': 0.6533864795918368}, 'length_of_train': 11749, 'length_of_test': 4605}, 'epoch1': {'scores': {'f1_score': 0.2853688539717369, 'validation_accuracy': 0.9758792656163374, 'validation_loss': 0.6470168102297009}, 'length_of_train': 11749, 'length_of_test': 4605}, 'epoch2': {'scores': {'f1_score': 0.2865271053818297, 'validation_accuracy': 0.9738497510552406, 'validation_loss': 0.6512272135416665}, 'length_of_train': 11749, 'length_of_test': 4605}, 'epoch3': {'scores': {'f1_score': 0.2865271053818297, 'validation_accuracy': 0.9738497510552406, 'validation_loss': 0.6512272135416665}, 'length_of_train': 11749, 'length_of_test': 4605}}
+
+ Loops: 4
+ Epochs: 5 
+ semi_sup_otpt_20.txt
+ validation_otpt_20.txt
+Probability Threshold: 0.45
+ Model: dmis-lab/biobert-v1.1
