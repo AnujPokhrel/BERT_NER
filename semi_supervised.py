@@ -122,6 +122,8 @@ def train(epoch, model, training_loader, device, optimizer):
         
         optimizer.zero_grad()
         loss.backward()
+    
+    return model
 
 def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     # to train
@@ -130,7 +132,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     for epoch in range(epochs):
         start = time.time()
         print(f"start of epoch {epoch} at {datetime.now().time()}")
-        train(epoch, model, training_loader, device, optimizer)
+        model = train(epoch, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {epoch} at {datetime.now().time()}")
         total_time = total_time + (end-start)
@@ -138,6 +140,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
         print(f"avg time for epochs: {avg_time_for_epochs}")
     
     print(f"total time taken : {total_time}")
+    return model
 
 def get_scores(model, testing_loader, device):
     model.eval()
@@ -333,27 +336,27 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
         training_loader = DataLoader(training_set, **train_params)
         testing_loader =  DataLoader(testing_set, **test_params)
         
-        wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
+        model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
 
-        prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, PROB_THRES)
-        train_sentences.extend(prob_dataset[0])
-        train_targets.extend(prob_dataset[1])
-        test_sentences = prob_dataset[2]
-        test_targets = prob_dataset[3]
+        # prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, PROB_THRES)
+        # train_sentences.extend(prob_dataset[0])
+        # train_targets.extend(prob_dataset[1])
+        # test_sentences = prob_dataset[2]
+        # test_targets = prob_dataset[3]
         
-        temp_dict['scores'] = prob_dataset[4]
-        temp_dict['length_of_train'] = len(train_sentences)
-        temp_dict['length_of_test'] = len(test_sentences)
-        result_dict[dict_name] = temp_dict
+        # temp_dict['scores'] = prob_dataset[4]
+        # temp_dict['length_of_train'] = len(train_sentences)
+        # temp_dict['length_of_test'] = len(test_sentences)
+        # result_dict[dict_name] = temp_dict
 
         validation_dict[dict_name] = get_scores(model, validation_loader, device)
         
     # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
-    file1 = open(SEMI_SUP_OTPT, 'w')
-    file1.write(f"{result_dict}")
-    file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
-    file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
-    file1.close()
+    # file1 = open(SEMI_SUP_OTPT, 'w')
+    # file1.write(f"{result_dict}")
+    # file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
+    # file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
+    # file1.close()
 
     file1 = open(VALIDATION_OTPT, "w")
     file1.write(f"{validation_dict}")

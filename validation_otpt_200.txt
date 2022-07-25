@@ -1,8 +1,0 @@
-{'epoch0': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch1': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch2': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch3': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch4': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch5': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch6': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch7': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch8': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}, 'epoch9': {'f1_score': 0.2903437693989455, 'validation_accuracy': 0.9452365093593356, 'validation_loss': 0.72660996835443}}
-
- Loops: 10
- Epochs: 20 
- semi_sup_otpt_200.txt
- validation_otpt_200.txt
-Probability Threshold: 0.45
- Model: dmis-lab/biobert-v1.1
