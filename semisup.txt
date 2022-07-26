@@ -1,0 +1,8 @@
+{'epoch-1': {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': 11316, 'length_of_test': 5038}, 'epoch0': {'scores': {'f1_score': 0.7777440836986328, 'validation_accuracy': 0.029288115222302694, 'validation_loss': 0.9882852891156465}, 'length_of_train': 14264, 'length_of_test': 2090}, 'epoch1': {'scores': {'f1_score': 0.5620412954960882, 'validation_accuracy': 0.224160268504656, 'validation_loss': 0.9439465648854964}, 'length_of_train': 14264, 'length_of_test': 2090}}
+
+ Loops: 2
+ Epochs: 5 
+ ./semisup.txt
+ ./validscores.txt
+Probability Threshold: 0.9975
+ Model: bert-base-cased

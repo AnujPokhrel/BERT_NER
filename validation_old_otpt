@@ -1,0 +1,6 @@
+{'epoch0': {'f1_score': 0.7757698615390591, 'validation_accuracy': 0.02883356475990407, 'validation_loss': 0.988348101265823}, 'epoch1': {'f1_score': 0.8065971679072939, 'validation_accuracy': 0.031753584860435016, 'validation_loss': 0.9897128164556959}}
+
+ Loops: 2 
+ Epochs: 5 
+ Prob Thers: 0.9975 
+ Model: bert-base-cased
