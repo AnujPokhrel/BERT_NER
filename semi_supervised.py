@@ -16,6 +16,7 @@ import string
 import nltk
 from nltk.stem import WordNetLemmatizer
 import sys
+import argparse
 
 #converting B,I and O to numerical values
 def tag_converter(t):
@@ -372,28 +373,36 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
 
 
 if __name__=="__main__":
-    LOOPS = 0
-    EPOCHS = 0
-    SEMI_SUP_OTPT = 'semisuper_output.txt'
-    VALIDATION_OTPT = 'validation_output.txt'
-    PROB_THRES = 0.45
-    try:
-        LOOPS = int(sys.argv[1])
-        EPOCHS = int(sys.argv[2])
-        SEMI_SUP_OTPT = sys.argv[3]
-        VALIDATION_OTPT = sys.argv[4]
-        PROB_THRES = float(sys.argv[5])
-        print(LOOPS, type(LOOPS))
-        print(EPOCHS, type(EPOCHS))
-        print(SEMI_SUP_OTPT, type(SEMI_SUP_OTPT))
-        print(VALIDATION_OTPT, type(VALIDATION_OTPT))
-        print(PROB_THRES, type(PROB_THRES))
-    except IndexError:
-        print("5 Arguments needed\n")
-        print("1) No of Loops\n")
-        print("2) No of Epochs\n")
-        print("3) Outputfile for Semisupervised data\n")
-        print("4) Outputfile for valiation scores data\n")
-        print("5) Probability threshold\n")
-        sys.exit()
-    start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES)
+    parser = argparse.ArgumentDefaultsHelpFormatter()
+    parser.add_argument('--loops', type=int, default=1, help='No of Loops')
+    parser.add_argument('--epochs', type=int, default=1, help='No of Epochs')
+    parser.add_argument('--semisup_outfile', type=str, default='./semisup.txt', help='Outputfile for Semisupervised data')
+    parser.add_argument('--validscores_outfile', type=str, default='./validscores.txt', help='Outputfile for valiation scores data')
+    parser.add_argument('--prob_thresh', type=float, default=0.45, help='Probability threshold')
+
+    args = parser.parse_args()
+    # LOOPS = args.loops
+    # EPOCHS = args.epochs
+    # SEMI_SUP_OTPT = args.semisup_outfile
+    # VALIDATION_OTPT = args.validscores_outfile
+    # PROB_THRES = args.prob_thresh
+    # try:
+    #     LOOPS = int(sys.argv[1])
+    #     EPOCHS = int(sys.argv[2])
+    #     SEMI_SUP_OTPT = sys.argv[3]
+    #     VALIDATION_OTPT = sys.argv[4]
+    #     PROB_THRES = float(sys.argv[5])
+    #     print(LOOPS, type(LOOPS))
+    #     print(EPOCHS, type(EPOCHS))
+    #     print(SEMI_SUP_OTPT, type(SEMI_SUP_OTPT))
+    #     print(VALIDATION_OTPT, type(VALIDATION_OTPT))
+    #     print(PROB_THRES, type(PROB_THRES))
+    # except IndexError:
+    #     print("5 Arguments needed\n")
+    #     print("1) No of Loops\n")
+    #     print("2) No of Epochs\n")
+    #     print("3) Outputfile for Semisupervised data\n")
+    #     print("4) Outputfile for valiation scores data\n")
+    #     print("5) Probability threshold\n")
+    #     sys.exit()
+    start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thresh)
