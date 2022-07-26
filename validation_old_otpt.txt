@@ -1,0 +1,6 @@
+{'epoch0': {'f1_score': 0.33232562582493425, 'validation_accuracy': 0.8404582384266431, 'validation_loss': 0.9003077531645566}, 'epoch1': {'f1_score': 0.33232562582493425, 'validation_accuracy': 0.8404582384266431, 'validation_loss': 0.9003077531645566}, 'epoch2': {'f1_score': 0.33232562582493425, 'validation_accuracy': 0.8404582384266431, 'validation_loss': 0.9003077531645566}, 'epoch3': {'f1_score': 0.33232562582493425, 'validation_accuracy': 0.8404582384266431, 'validation_loss': 0.9003077531645566}, 'epoch4': {'f1_score': 0.33232562582493425, 'validation_accuracy': 0.8404582384266431, 'validation_loss': 0.9003077531645566}}
+
+ Loops: 5 
+ Epochs: 20 
+ Prob Thers: 0.45 
+ Model: dmis-lab/biobert-v1.1

@@ -302,8 +302,9 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     
     validation_loader =  DataLoader(validation_set, **validation_params)
 
-    result_dict, validation_dict = {}, {}
+    result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
+    model1 = model
     for i in range(LOOPS):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
@@ -350,8 +351,8 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
         result_dict[dict_name] = temp_dict
 
         validation_dict[dict_name] = get_scores(model, validation_loader, device)
-        
-    # torch.save(model.state_dict(), "200EpochsBioBioSemiSuper")
+        validation_old_dict[dict_name] = get_scores(model1, validation_loader, device)
+    torch.save(model.state_dict(), "60EpochsBioBioSemiSupervariablemdoel")
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
@@ -362,6 +363,11 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     file1.write(f"{validation_dict}")
     file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
     file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
+    file1.close()
+
+    file1 = open("validation_old_otpt", "w")
+    file1.write(f"{validation_old_dict}")
+    file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}")
     file1.close()
 
 
