@@ -255,9 +255,9 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
 def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"The device is sss: {device}")
-    MODEL_NAME = 'dmis-lab/biobert-v1.1'
+    # MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
-    #MODEL_NAME = 'bert-base-cased'
+    MODEL_NAME = 'bert-base-cased'
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
@@ -304,7 +304,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['epoch-1'] = {'scores': {'f1_score': 0, 'validation_loss': 0, 'validation_accuracy': 0}, 'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences)}
-    model1 = model
+    model1 = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     for i in range(LOOPS):
         temp_dict = {}
         dict_name = 'epoch' + str(i)
