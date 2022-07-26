@@ -1,8 +1,0 @@
-{'epoch0': {'f1_score': 0.7922226533774865, 'validation_accuracy': 0.025173632704289788, 'validation_loss': 0.9900364583333333}, 'epoch1': {'f1_score': 0.799278706289608, 'validation_accuracy': 0.04132086099981593, 'validation_loss': 0.9849337864349768}}
-
- Loops: 2
- Epochs: 5 
- ./semisup.txt
- ./validscores.txt
-Probability Threshold: 0.9975
- Model: bert-base-cased

@@ -144,7 +144,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     print(f"total time taken : {total_time}")
     return model
 
-def get_scores(model, testing_loader, device):
+def get_scores(model, testing_loader, device, EPOCHS):
     model.eval()
     eval_loss = 0; eval_accuracy = 0
     predictions , true_labels = [], []
@@ -173,7 +173,7 @@ def get_scores(model, testing_loader, device):
         pred_tags = [p_i for p in predictions for p_i in p]
         valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
         f1 = f1_score(valid_tags, pred_tags, average='macro')
-        scores = {'f1_score': f1, 'validation_accuracy': validation_accuracy, 'validation_loss': eval_loss}
+        scores = {'f1_score': f1, 'validation_accuracy': validation_accuracy, 'validation_loss': eval_loss, 'epochs': EPOCHS}
         return scores
 
 
@@ -232,7 +232,7 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
 
         return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets]
 
-def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
+def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"The device is sss: {device}")
     # MODEL_NAME = 'dmis-lab/biobert-v1.1'
@@ -266,7 +266,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     print(len(train_sentences))
     print(len(test_sentences))
     #setting up the optimizer and the learning rate
-    optimizer = torch.optim.Adam(params =  model.parameters(), lr=1e-5) 
+    optimizer = torch.optim.Adam(params =  model.parameters(), lr=LEARNING_RATE) 
 
     validation_set = CustomDataset(
             tokenizer=tokenizer,
@@ -284,7 +284,6 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
-    model1 = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     for i in range(LOOPS):
         temp_dict = {}
         dict_name = 'loop' + str(i)
@@ -335,8 +334,10 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
     #torch.save(model.state_dict(), "60EpochsBioBioSemiSupervariablemdoel")
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
-    file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
-    file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
+    file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
+    file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}\n")
+    file1.write(f"Learning Rate: {LEARNING_RATE}")
+    file1.write(f"Time finished: {datetime.now()}")
     file1.close()
 
     #file1 = open(VALIDATION_OTPT, "w")
@@ -347,18 +348,20 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES ):
 
     file1 = open("validation_old_otpt", "w")
     file1.write(f"{validation_old_dict}")
-    file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}")
+    file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
+    file1.write(f"Learning Rate: {LEARNING_RATE}")
+    file1.write(f"Time finished: {datetime.now()}")
     file1.close()
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--loops', type=int, default=1, help='No of Loops')
-    parser.add_argument('--epochs', type=int, default=1, help='No of Epochs')
-    parser.add_argument('--semisup_outfile', type=str, default='./semisupervised_scores.txt', help='Outputfile for Semisupervised data')
-    parser.add_argument('--validscores_outfile', type=str, default='./validation_scores.txt', help='Outputfile for valiation scores data')
-    parser.add_argument('--prob_thresh', type=float, default=0.9975, help='Probability threshold')
-
+    parser.add_argument('-l', '--loops', type=int, default=1, help='No of Loops')
+    parser.add_argument('-e', '--epochs', type=int, default=1, help='No of Epochs')
+    parser.add_argument('-s', '--semisup_outfile', type=str, default='./semisupervised_scores.txt', help='Outputfile for Semisupervised data')
+    parser.add_argument('-v', '--validscores_outfile', type=str, default='./validation_scores.txt', help='Outputfile for valiation scores data')
+    parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
+    parser.add_argument('-r', '--learning_rate', type=float, default=1e-5, help='Learning Rate')
     args = parser.parse_args()
     # LOOPS = args.loops
     # EPOCHS = args.epochs
@@ -384,4 +387,4 @@ if __name__=="__main__":
     #     print("4) Outputfile for valiation scores data\n")
     #     print("5) Probability threshold\n")
     #     sys.exit()
-    start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thresh)
+    start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
