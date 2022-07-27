@@ -1,0 +1,7 @@
+{'loop-1': {'length_of_train': 11316, 'length_of_test': 5038, 'no_of_epochs': 0}, 'loop0': {'length_of_train': 15067, 'length_of_test': 1287, 'no_of_epochs': 10}, 'loop1': {'length_of_train': 15239, 'length_of_test': 1115, 'no_of_epochs': 10}, 'loop2': {'length_of_train': 15449, 'length_of_test': 905, 'no_of_epochs': 10}, 'loop3': {'length_of_train': 15595, 'length_of_test': 759, 'no_of_epochs': 10}, 'loop4': {'length_of_train': 15743, 'length_of_test': 611, 'no_of_epochs': 10}, 'loop5': {'length_of_train': 15887, 'length_of_test': 467, 'no_of_epochs': 10}, 'loop6': {'length_of_train': 15971, 'length_of_test': 383, 'no_of_epochs': 10}, 'loop7': {'length_of_train': 16020, 'length_of_test': 334, 'no_of_epochs': 10}, 'loop8': {'length_of_train': 16052, 'length_of_test': 302, 'no_of_epochs': 10}, 'loop9': {'length_of_train': 16099, 'length_of_test': 255, 'no_of_epochs': 10}}
+
+ Loops: 10
+ Epochs: 10
+Probability Threshold: 0.9975
+ Model: bert-base-cased
+Learning Rate: 1e-05Time finished: 2022-07-26 22:00:30.983423

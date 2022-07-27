@@ -285,6 +285,12 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
     for i in range(LOOPS):
+        quit = False
+        if quit == True:
+            break
+        if len(test_sentences) == 0:
+            quit = True
+        
         temp_dict = {}
         dict_name = 'loop' + str(i)
 
@@ -330,8 +336,8 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
         result_dict[dict_name] = temp_dict
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
-        validation_old_dict[dict_name] = get_scores(model, validation_loader, device)
-    #torch.save(model.state_dict(), "60EpochsBioBioSemiSupervariablemdoel")
+        validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
+    torch.save(model.state_dict(), "fullTrainor100epochtrain")
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
