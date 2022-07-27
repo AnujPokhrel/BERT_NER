@@ -1,7 +1,0 @@
-{'loop0': {'f1_score': 0.8344907557179605, 'validation_accuracy': 0.9909050632911394, 'validation_loss': 0.02348916744813323, 'epochs': 10}, 'loop1': {'f1_score': 0.8243685736364345, 'validation_accuracy': 0.9866384493670886, 'validation_loss': 0.038463237801495985, 'epochs': 10}, 'loop2': {'f1_score': 0.8286756920204486, 'validation_accuracy': 0.9875593354430376, 'validation_loss': 0.038413251844482334, 'epochs': 10}, 'loop3': {'f1_score': 0.8114257614856522, 'validation_accuracy': 0.986903481012658, 'validation_loss': 0.04775659065646461, 'epochs': 10}, 'loop4': {'f1_score': 0.8008211157634414, 'validation_accuracy': 0.9847998417721514, 'validation_loss': 0.06144991873091535, 'epochs': 10}, 'loop5': {'f1_score': 0.8144924135264545, 'validation_accuracy': 0.9870490506329113, 'validation_loss': 0.06073076490171348, 'epochs': 10}, 'loop6': {'f1_score': 0.8094149046770635, 'validation_accuracy': 0.9856313291139238, 'validation_loss': 0.07349899196643618, 'epochs': 10}, 'loop7': {'f1_score': 0.8071953260265685, 'validation_accuracy': 0.986196993670886, 'validation_loss': 0.06832963638479196, 'epochs': 10}, 'loop8': {'f1_score': 0.7910286841154138, 'validation_accuracy': 0.9837863924050635, 'validation_loss': 0.08903953400027903, 'epochs': 10}, 'loop9': {'f1_score': 0.8059333187447031, 'validation_accuracy': 0.9864936708860759, 'validation_loss': 0.07643402558810349, 'epochs': 10}}
-
- Loops: 10 
- Epochs: 10 
- Prob Thers: 0.9975 
- Model: bert-base-cased
-Learning Rate: 1e-05Time finished: 2022-07-26 22:00:30.986294

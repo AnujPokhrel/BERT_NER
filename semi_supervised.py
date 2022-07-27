@@ -352,7 +352,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     #file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
     #file1.close()
 
-    file1 = open("validation_old_otpt", "w")
+    file1 = open("validation_otpt.txt", "w")
     file1.write(f"{validation_old_dict}")
     file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
     file1.write(f"Learning Rate: {LEARNING_RATE}")
@@ -367,7 +367,7 @@ if __name__=="__main__":
     parser.add_argument('-s', '--semisup_outfile', type=str, default='./semisupervised_scores.txt', help='Outputfile for Semisupervised data')
     parser.add_argument('-v', '--validscores_outfile', type=str, default='./validation_scores.txt', help='Outputfile for valiation scores data')
     parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
-    parser.add_argument('-r', '--learning_rate', type=float, default=1e-5, help='Learning Rate')
+    parser.add_argument('-r', '--learning_rate', type=float, default=5e-5, help='Learning Rate')
     args = parser.parse_args()
     # LOOPS = args.loops
     # EPOCHS = args.epochs
