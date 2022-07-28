@@ -178,7 +178,7 @@ def get_scores(model, testing_loader, device, EPOCHS):
 
 
 #get f1 score, print accuracy and loss
-def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold):
+def get_new_dataset(model, testing_loader, device, prob_threshold):
     model.eval()
     new_test_sentences, new_test_targets, for_train_sentences, for_train_targets = [], [], [], []
     with torch.no_grad():
@@ -188,10 +188,12 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
             targets = data['tags'].to(device)
             test_sentences = data['sentences']
 
-            output = model(ids, mask, labels=targets)
-            loss, logits = output[:2]
+            # output = model(ids, mask, labels=targets)
+            # loss, logits = output[:2]
+            output = model(ids, mask)
+            logits = output[:2][0]
             logits = logits.detach().cpu().numpy()
-            label_ids = targets.to('cpu').numpy()
+            # label_ids = targets.to('cpu').numpy()
 
             no_of_words_array = []
             no_of_words = 0
@@ -208,13 +210,13 @@ def get_new_dataset(model, testing_loader, device, test_targets, prob_threshold)
             
             for outer_index, array_list in enumerate(pred_prob):
                 max_val = []
-                average_max_val, no_of_words_for_index = 0, 0
+                average_max_val = 0
                 test_target_temp = []
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index <= no_of_words_array[outer_index]):
                             max_val.append(np.max(array_list[1]))
-                            test_target_temp.append(test_targets[outer_index][inner_index])
+                            test_target_temp.append(np.argmax(array_list[1]))
                         else:
                             break
                     except:
@@ -324,7 +326,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
         
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
 
-        prob_dataset = get_new_dataset(model, testing_loader, device, test_targets, PROB_THRES)
+        prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
         test_sentences = prob_dataset[2]
@@ -346,12 +348,6 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     file1.write(f"Time finished: {datetime.now()}")
     file1.close()
 
-    #file1 = open(VALIDATION_OTPT, "w")
-    #file1.write(f"{validation_dict}")
-    #file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS} \n {SEMI_SUP_OTPT}\n {VALIDATION_OTPT}\n")
-    #file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}")
-    #file1.close()
-
     file1 = open("validation_otpt.txt", "w")
     file1.write(f"{validation_old_dict}")
     file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
@@ -369,28 +365,4 @@ if __name__=="__main__":
     parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
     parser.add_argument('-r', '--learning_rate', type=float, default=5e-5, help='Learning Rate')
     args = parser.parse_args()
-    # LOOPS = args.loops
-    # EPOCHS = args.epochs
-    # SEMI_SUP_OTPT = args.semisup_outfile
-    # VALIDATION_OTPT = args.validscores_outfile
-    # PROB_THRES = args.prob_thresh
-    # try:
-    #     LOOPS = int(sys.argv[1])
-    #     EPOCHS = int(sys.argv[2])
-    #     SEMI_SUP_OTPT = sys.argv[3]
-    #     VALIDATION_OTPT = sys.argv[4]
-    #     PROB_THRES = float(sys.argv[5])
-    #     print(LOOPS, type(LOOPS))
-    #     print(EPOCHS, type(EPOCHS))
-    #     print(SEMI_SUP_OTPT, type(SEMI_SUP_OTPT))
-    #     print(VALIDATION_OTPT, type(VALIDATION_OTPT))
-    #     print(PROB_THRES, type(PROB_THRES))
-    # except IndexError:
-    #     print("5 Arguments needed\n")
-    #     print("1) No of Loops\n")
-    #     print("2) No of Epochs\n")
-    #     print("3) Outputfile for Semisupervised data\n")
-    #     print("4) Outputfile for valiation scores data\n")
-    #     print("5) Probability threshold\n")
-    #     sys.exit()
     start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
