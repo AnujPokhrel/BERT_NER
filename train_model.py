@@ -14,7 +14,8 @@ from sklearn.metrics import precision_recall_fscore_support
 import string
 import nltk
 from nltk.stem import WordNetLemmatizer
-
+import sys
+import argparse
 
 #converting B,I and O to numerical values
 def tag_converter(t):
@@ -96,6 +97,7 @@ class CustomDataset(Dataset):
     def __len__(self):
         return self.len
 
+
 #fn to calculate flat accuracy
 def flat_accuracy(preds, labels):
     flat_preds = np.argmax(preds, axis=2).flatten()
@@ -106,6 +108,7 @@ def flat_accuracy(preds, labels):
 def train(epoch, model, training_loader, device, optimizer):
     model.train()
     f1_scores = []
+    print("new epoch")
     for i,data in enumerate(training_loader, 0):
         ids = data['ids'].to(device)
         mask = data['mask'].to(device)
@@ -115,100 +118,14 @@ def train(epoch, model, training_loader, device, optimizer):
 
         # optimizer.zero_grad()
         if i%300==0:
-            print(f'Epoch: {epoch}, Loss:  {loss.item()}')
+            print(f'Epoch: {epoch} Loss:  {loss.item()}')
         
         optimizer.zero_grad()
         loss.backward()
+        optimizer.step()
 
-def get_scores(model, testing_loader, device):
-    model.eval()
-    eval_loss = 0; eval_accuracy = 0
-    n_correct = 0; n_wrong = 0; total = 0
-    pred_prob_list = []
-    predictions , true_labels = [], []
-    new_test_sentences = []
-    nb_eval_steps, nb_eval_examples = 0, 0
-    with torch.no_grad():
-        for _, data in enumerate(testing_loader, 0):
-            ids = data['ids'].to(device)
-            mask = data['mask'].to(device)
-            targets = data['tags'].to(device)
+    return model
 
-            output = model(ids, mask, labels=targets)
-            loss, logits = output[:2]
-            logits = logits.detach().cpu().numpy()
-            label_ids = targets.to('cpu').numpy()
-            pred_prob = [list(pp) for pp in softmax(logits, axis=-1)]
-            predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
-            true_labels.append(label_ids)
-            accuracy = flat_accuracy(logits, label_ids)
-            eval_loss += loss.mean().item()
-            eval_accuracy += accuracy
-            nb_eval_examples += ids.size(0)
-            nb_eval_steps += 1        
-        eval_loss = eval_loss/nb_eval_steps
-        validation_accuracy = eval_accuracy/nb_eval_steps
-        print("Validation loss: {}".format(eval_loss))
-        print("Validation Accuracy: {}".format(eval_accuracy/nb_eval_steps))
-#         print(f"predictions probability: {pre_prob[0]}")
-        pred_tags = [p_i for p in predictions for p_i in p]
-        valid_tags = [l_ii for l in true_labels for l_i in l for l_ii in l_i]
-        f1 = f1_score(valid_tags, pred_tags, average='macro')
-        return [f1, eval_loss, validation_accuracy]
-
-#get f1 score, print accuracy and loss
-def get_ner_tokens(model, testing_loader, device):
-    model.eval()
-    pred_prob_list = []
-    predictions , true_labels = [], []
-    new_test_sentences = []
-    selected_tokens_arr = []
-    counter_for_inner_array = 0
-    with torch.no_grad():
-        for _, data in enumerate(testing_loader, 0):
-            ids = data['ids'].to(device)
-            mask = data['mask'].to(device)
-            targets = data['tags'].to(device)
-            sentences = data['sentences']
-            
-            output = model(ids, mask, labels=targets)
-            loss, logits = output[:2]
-            logits = logits.detach().cpu().numpy()
-            label_ids = targets.to('cpu').numpy()
-
-            no_of_words_array = []
-            no_of_words = 0
-            for x in enumerate(mask.cpu().numpy()):
-                # print(x)
-                for each in x[1]:
-                    if each == 1:
-                        no_of_words+= 1
-                    else:
-                        no_of_words_array.append(no_of_words)
-                        no_of_words = 0
-                        break
-
-            pred_prob = [list(pp) for pp in softmax(logits, axis=-1)]
-            pred_prob_list.extend(pred_prob)
-            
-            for outer_index, array_list in enumerate(pred_prob):
-                # average_max_val, max_val, no_of_words_for_index = 0, 0, 0
-                for inner_index, x in enumerate(array_list):
-                      try:
-                          if (inner_index < no_of_words_array[outer_index] ):
-                              if ((np.argmax(x).item()) == 0):
-                                  counter_for_inner_array += 1
-                                  selected_tokens_arr.append([ids[outer_index][inner_index].item()])
-                              elif ((np.argmax(x).item()) == 1 and np.argmax(array_list[inner_index -1 ]).item() == 0) or ((np.argmax(x).item()) == 1 and np.argmax(array_list[inner_index -1 ]).item() == 1 and np.argmax(array_list[inner_index -2 ]).item() == 0):
-                                  counter_for_inner_array += 1
-                                  selected_tokens_arr.append([ids[outer_index][inner_index - 1].item(), ids[outer_index][inner_index].item()])
-                      except:
-                          continue
-        
-        
-        print(f"final len of selected_tokens_arry : {len(selected_tokens_arr)}")
-        # print(len())
-        return selected_tokens_arr
 
 def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     # to train
@@ -217,7 +134,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     for epoch in range(epochs):
         start = time.time()
         print(f"start of epoch {epoch} at {datetime.now().time()}")
-        train(epoch, model, training_loader, device, optimizer)
+        model = train(epoch, model, training_loader, device, optimizer)
         end = time.time()
         print(f"end of epoch {epoch} at {datetime.now().time()}")
         total_time = total_time + (end-start)
@@ -225,11 +142,13 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
         print(f"average time for epochs: {avg_time_for_epochs}")
 
     print(f"total time taken was: {total_time}")
+    return model
 
-def start():
+def start(EPOCHS, MODEL_OUTPUT, LEARNING_RATE)):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    MODEL_NAME = 'dmis-lab/biobert-v1.1'
+    MODEL_NAME = 'bert-base-cased'
+    # MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -240,25 +159,21 @@ def start():
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
+    train_generated = sen_generator("BC4CHEMD/train.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_targets = train_generated[1]
 
-    test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
-    test_sentences = test_generated[0]
-    test_targets = test_generated[1]
+    validation_percent = 0.9
+    validation_size = int(validation_percent * len(train_sentences))
+
+    train_sentences = train_sentences[:validation_size]
+    train_targets = train_targets[:validation_size]
+    
 
     training_set = CustomDataset(
         tokenizer=tokenizer,
         sentences=train_sentences,
         labels=train_targets, 
-        max_len=200
-    )
-
-    testing_set = CustomDataset(
-        tokenizer=tokenizer,
-        sentences=test_sentences,
-        labels=test_targets, 
         max_len=200
     )
 
@@ -268,29 +183,28 @@ def start():
                     'num_workers': 0
                     }
 
-    test_params = {'batch_size': 16,
-                    'shuffle': False,
-                    'num_workers': 0
-                    }
-
     training_loader = DataLoader(training_set, **train_params)
-    testing_loader =  DataLoader(testing_set, **test_params)
 
     #setting up the optimizer and the learning rate
-    optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
+    optimizer = torch.optim.Adam(params =  model.parameters(), lr=LEARNING_RATE)
 
     #train the model for x epochs
-    for i in range(10):
-        wrapper_for_train(10, model, training_loader, device, optimizer)
-        scores = get_scores(model, testing_loader, device)
-        file1 = open("scores_file.txt", 'a')
-        file1.write(f"After {(i+1) * 10} epochs \n")
-        file1.write(f"F1 score : {scores[0]}\n Validation Loss: {scores[1]} \n Validation Accuracy: {scores[2]} \n")
-        file1.close()
+    
+    wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
+
     #to save the model
-    torch.save(model.state_dict(), "100EpochsBioBio")
+    try:
+        torch.save(model.state_dict(), MODEL_OUTPUT)
+    except:
+        print("Could not save the model")
 
 
 
 if __name__=="__main__":
-    start()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-e', '--epochs', type=int, default=1, help='No of Epochs')
+    parser.add_argument('-s', '--model_output', type=str, default='./ModelOutput', help='Outputfile for the trained Model')
+    parser.add_argument('-r', '--learning_rate', type=float, default=5e-5, help='Learning Rate')
+    args = parser.parse_args()
+    start(args.epochs, args.model_output, args.learning_rate)
+
