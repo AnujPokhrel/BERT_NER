@@ -14,6 +14,7 @@ from sklearn.metrics import precision_recall_fscore_support
 import string
 import nltk
 from nltk.stem import WordNetLemmatizer
+import argparse
 
 
 #converting B,I and O to numerical values
@@ -133,32 +134,39 @@ def get_ner_tokens(model, testing_loader, device):
             
             for outer_index, array_list in enumerate(pred_prob):
                 # average_max_val, max_val, no_of_words_for_index = 0, 0, 0
+                b_is_set = False
+                b_set_on = 0
                 for inner_index, x in enumerate(array_list):
-                      try:
-                          if (inner_index < no_of_words_array[outer_index] ):
-                              if ((np.argmax(x).item()) == 0):
-                                  counter_for_inner_array += 1
-                                  selected_tokens_arr.append([ids[outer_index][inner_index].item()])
-                              elif ((np.argmax(x).item()) == 1 and np.argmax(array_list[inner_index -1 ]).item() == 0) or ((np.argmax(x).item()) == 1 and np.argmax(array_list[inner_index -1 ]).item() == 1 and np.argmax(array_list[inner_index -2 ]).item() == 0):
-                                  counter_for_inner_array += 1
-                                  selected_tokens_arr.append([ids[outer_index][inner_index - 1].item(), ids[outer_index][inner_index].item()])
-                      except:
-                          continue
+                    try:
+                        if (inner_index < no_of_words_array[outer_index] ):
+                            if ((np.argmax(x).item()) == 0):
+                                counter_for_inner_array += 1
+                                selected_tokens_arr.append([ids[outer_index][inner_index].item()])
+                                b_is_set = True
+                                b_set_on = inner_index
+                            elif ((np.argmax(x).item()) == 1 and b_is_set == True):
+                                counter_for_inner_array += 1
+                                selected_tokens_arr[-1].append(ids[outer_index][inner_index].item())
+                            elif ((np.argmax(x).item()) == 2 and b_is_set == True):
+                                b_is_set = False
+                    except:
+                        continue
         
         
         print(f"final len of selected_tokens_arry : {len(selected_tokens_arr)}")
         # print(len())
         return selected_tokens_arr
 
-def start():
+def start(trained_model):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    MODEL_NAME = 'dmis-lab/biobert-v1.1'
+    # MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
+    MODEL_NAME = 'bert-base-cased'
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    model.load_state_dict(torch.load("100EpochsBioBio"))
+    model.load_state_dict(torch.load(trained_model))
 
     nltk.download('stopwords')
     nltk.download('wordnet')
@@ -166,7 +174,7 @@ def start():
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    test_generated = sen_generator("BC4CHEMD/test.tsv", stopwords, wordnet_lemmatizer)
     test_sentences = test_generated[0]
     test_targets = test_generated[1]
 
@@ -185,9 +193,6 @@ def start():
     # training_loader = DataLoader(training_set, **train_params)
     testing_loader =  DataLoader(testing_set, **test_params)
 
-    #setting up the optimizer and the learning rate
-    optimizer = torch.optim.Adam(params =  model.parameters(), lr=5e-5)
-
     ner_tokens = get_ner_tokens(model, testing_loader, device)
 
     file1 = open("Ner_tokens.txt", 'a')
@@ -198,4 +203,7 @@ def start():
 
 
 if __name__=="__main__":
-    start()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-m', '--model', type=str, default='100Epochs', help='Trained Model')
+    args = parser.parse_args()
+    start(args.model)
