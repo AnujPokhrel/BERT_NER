@@ -204,7 +204,20 @@ def start(trained_model, ner_file):
 
     file1 = open("Ner_tokensBC2GM.txt", 'a')
     for en, each in enumerate(ner_tokens[0]):
-        file1.write(f"{tokenizer.decode(each)} \n")
+        split_decoded_token = tokenizer.decode(each).split(" ")
+        sentence, split_garray = "", []
+        for each in split_decoded_token:
+            if (each[0] == '#' or each == "[SEP]" or each == "[PAD]") != True:
+                split_garray.append(each)
+        
+        for index, each in enumerate(split_garray):
+            if index == 0:
+                sentence = sentence + each
+            else:
+                sentence = sentence + " " + each
+
+        if sentence != "":
+            file1.write(f"{tokenizer.decode(each)} \n")
         
     file1.write(f"Coutner for b: {ner_tokens[1]} \n")
     file1.write(f"Counter for i: {ner_tokens[2]} \n")
