@@ -15,6 +15,7 @@ import string
 import nltk
 from nltk.stem import WordNetLemmatizer
 import argparse
+from os.path import exists
 
 
 #converting B,I and O to numerical values
@@ -105,6 +106,9 @@ def get_ner_tokens(model, testing_loader, device):
     new_test_sentences = []
     selected_tokens_arr = []
     counter_for_inner_array = 0
+    counter_for_b = 0
+    counter_for_i = 0
+    counter_for_o = 0
     with torch.no_grad():
         for _, data in enumerate(testing_loader, 0):
             ids = data['ids'].to(device)
@@ -112,8 +116,8 @@ def get_ner_tokens(model, testing_loader, device):
             targets = data['tags'].to(device)
             sentences = data['sentences']
             
-            output = model(ids, mask, labels=targets)
-            loss, logits = output[:2]
+            output = model(ids, mask)
+            logits = output[:2][0]
             logits = logits.detach().cpu().numpy()
             label_ids = targets.to('cpu').numpy()
 
@@ -139,25 +143,28 @@ def get_ner_tokens(model, testing_loader, device):
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index < no_of_words_array[outer_index] ):
-                            if ((np.argmax(x).item()) == 0):
+                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.9975):
                                 counter_for_inner_array += 1
+                                counter_for_b += 1
                                 selected_tokens_arr.append([ids[outer_index][inner_index].item()])
                                 b_is_set = True
                                 b_set_on = inner_index
-                            elif ((np.argmax(x).item()) == 1 and b_is_set == True):
+                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.9975):
                                 counter_for_inner_array += 1
+                                counter_for_i += 1
                                 selected_tokens_arr[-1].append(ids[outer_index][inner_index].item())
-                            elif ((np.argmax(x).item()) == 2 and b_is_set == True):
+                            else:
                                 b_is_set = False
+                                counter_for_o += 1
                     except:
                         continue
         
         
         print(f"final len of selected_tokens_arry : {len(selected_tokens_arr)}")
         # print(len())
-        return selected_tokens_arr
+        return [selected_tokens_arr, counter_for_b, counter_for_i, counter_for_o]
 
-def start(trained_model):
+def start(trained_model, ner_file):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # MODEL_NAME = 'dmis-lab/biobert-v1.1'
@@ -174,7 +181,7 @@ def start(trained_model):
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    test_generated = sen_generator("BC4CHEMD/test.tsv", stopwords, wordnet_lemmatizer)
+    test_generated = sen_generator(ner_file, stopwords, wordnet_lemmatizer)
     test_sentences = test_generated[0]
     test_targets = test_generated[1]
 
@@ -195,15 +202,27 @@ def start(trained_model):
 
     ner_tokens = get_ner_tokens(model, testing_loader, device)
 
-    file1 = open("Ner_tokens.txt", 'a')
-    for en, each in enumerate(ner_tokens):
+    file1 = open("Ner_tokensBC2GM.txt", 'a')
+    for en, each in enumerate(ner_tokens[0]):
         file1.write(f"{tokenizer.decode(each)} \n")
         
+    file1.write(f"Coutner for b: {ner_tokens[1]} \n")
+    file1.write(f"Counter for i: {ner_tokens[2]} \n")
+    file1.write(f"Counter for o: {ner_tokens[3]} \n")
+    file1.write(f"Model used: {MODEL_NAME}\n")
+    file1.write(f"saved model used: {trained_model}")
+    file1.write(f"tokens calcualted of ")
     file1.close()
 
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-m', '--model', type=str, default='100Epochs', help='Trained Model')
+    parser.add_argument('-m', '--model', type=str, default='200EpochsLegit', help='Trained Model')
+    parser.add_argument('-f', '--file', type=str, default='', help='File to extract NERs from')
     args = parser.parse_args()
-    start(args.model)
+    model_exists = exists(args.model)
+    ner_file_exists = exists(args.file)
+    if model_exists and ner_file_exists:
+        start(args.model, args.file)
+    else:
+        print("Provided Files don't exist")

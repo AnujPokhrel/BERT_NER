@@ -144,7 +144,7 @@ def wrapper_for_train(epochs, model, training_loader, device, optimizer):
     print(f"total time taken was: {total_time}")
     return model
 
-def start(EPOCHS, MODEL_OUTPUT, LEARNING_RATE)):
+def start(EPOCHS, MODEL_OUTPUT, LEARNING_RATE):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     MODEL_NAME = 'bert-base-cased'

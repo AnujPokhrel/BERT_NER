@@ -188,8 +188,8 @@ def get_new_dataset(model, testing_loader, device, prob_threshold):
             targets = data['tags'].to(device)
             test_sentences = data['sentences']
 
-            # output = model(ids, mask, labels=targets)
-            # loss, logits = output[:2]
+            #output = model(ids, mask, labels=targets)
+            #loss, logits = output[:2]
             output = model(ids, mask)
             logits = output[:2][0]
             logits = logits.detach().cpu().numpy()
@@ -286,13 +286,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
-    for i in range(LOOPS):
-        quit = False
-        if quit == True:
-            break
-        if len(test_sentences) == 0:
-            quit = True
-        
+    for i in range(LOOPS):        
         temp_dict = {}
         dict_name = 'loop' + str(i)
 
@@ -325,7 +319,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
         testing_loader =  DataLoader(testing_set, **test_params)
         
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
-
+        #model.load_state_dict(torch.load("200EpochsTrainedSemiSupLegit"))
         prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
@@ -339,7 +333,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
-    torch.save(model.state_dict(), "fullTrainor100epochtrain")
+    torch.save(model.state_dict(), "200EpochLegit")
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
