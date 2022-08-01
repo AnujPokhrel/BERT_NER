@@ -288,7 +288,9 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
     loops_run = 0
-    for i in range(LOOPS):        
+    loop_counter = 0
+    while(True):
+    #for i in range(LOOPS):        
         temp_dict = {}
         dict_name = 'loop' + str(i)
 
@@ -337,13 +339,15 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
         f1_scores_array.append(validation_old_dict[dict_name]['f1_score'])
 
+        loop_counter += 1
         if len(f1_scores_array) >= 3:
-            if (f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0:
-                loops_run = i + 1
+            if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= max_epochs):
+                loops_run = loop_counter
                 break
 
-    model_save_name = str((loops_run +1) * EPOCHS)+ "_" + MODEL_NAME
-    validation_saved = str((loops_run +1) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
+
+    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME
+    validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
     torch.save(model.state_dict(), model_save_name)
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
@@ -365,8 +369,8 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-l', '--loops', type=int, default=1, help='No of Loops')
-    parser.add_argument('-e', '--epochs', type=int, default=1, help='No of Epochs')
+    parser.add_argument('-m', '--maxEpochs', type=int, default=1, help='Max no of epochs to run')
+    parser.add_argument('-e', '--epochs', type=int, default=1, help='Get validation scores after e epochs are run')
     parser.add_argument('-s', '--semisup_outfile', type=str, default='./semisupervised_scores.txt', help='Outputfile for Semisupervised data')
     parser.add_argument('-v', '--validscores_outfile', type=str, default='./validation_scores.txt', help='Outputfile for valiation scores data')
     parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
