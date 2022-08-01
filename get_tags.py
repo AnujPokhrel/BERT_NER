@@ -40,6 +40,21 @@ def no_stopwords(text, stopwords):
     else:
       return 1
 
+def just_sentences(filename, stopwords, wordnet_lemmatizer):
+    f = open(filename, "r")
+    sentences = []
+    sen = []
+    for line in f.readlines():
+        words = line.split(" ")
+        for each in words:
+            if each == "\n":
+                sentences.append(' '.join(sen))
+                sen = []
+            else:
+                if no_punctutation(each) and no_stopwords(each, stopwords):
+                    sen.append(wordnet_lemmatizer.lemmatize(each.lower()))
+    return sentences
+
 #get individual sentences from the Data
 def sen_generator(filename, stopwords, wordnet_lemmatizer):
   f = open(filename, "r")
@@ -64,10 +79,11 @@ def sen_generator(filename, stopwords, wordnet_lemmatizer):
 
 #class for creating the custom dataset
 class CustomDataset(Dataset):
-    def __init__(self, tokenizer, sentences, labels, max_len):
+    # def __init__(self, tokenizer, sentences, labels, max_len):
+    def __init__(self, tokenizer, sentences, max_len):
         self.len = len(sentences)
         self.sentences = sentences
-        self.labels = labels
+        # self.labels = labels
         self.tokenizer = tokenizer
         self.max_len = max_len
         
@@ -84,15 +100,15 @@ class CustomDataset(Dataset):
         e_sentences = self.sentences[index]
         ids = inputs['input_ids']
         mask = inputs['attention_mask']
-        label = self.labels[index]
-        label.extend([1]*200)
-        label=label[:200]
+        # label = self.labels[index]
+        # label.extend([1]*200)
+        # label=label[:200]
 
         return {
             'sentences': e_sentences,
             'ids': torch.tensor(ids),
             'mask': torch.tensor(mask),
-            'tags': torch.tensor(label)
+            # 'tags': torch.tensor(label)
         } 
     
     def __len__(self):
@@ -102,8 +118,8 @@ class CustomDataset(Dataset):
 def get_ner_tokens(model, testing_loader, device):
     model.eval()
     pred_prob_list = []
-    predictions , true_labels = [], []
-    new_test_sentences = []
+    # predictions , true_labels = [], []
+    # new_test_sentences = []
     selected_tokens_arr = []
     counter_for_inner_array = 0
     counter_for_b = 0
@@ -113,13 +129,13 @@ def get_ner_tokens(model, testing_loader, device):
         for _, data in enumerate(testing_loader, 0):
             ids = data['ids'].to(device)
             mask = data['mask'].to(device)
-            targets = data['tags'].to(device)
-            sentences = data['sentences']
+            # targets = data['tags'].to(device)
+            # sentences = data['sentences']
             
             output = model(ids, mask)
             logits = output[:2][0]
             logits = logits.detach().cpu().numpy()
-            label_ids = targets.to('cpu').numpy()
+            # label_ids = targets.to('cpu').numpy()
 
             no_of_words_array = []
             no_of_words = 0
@@ -139,7 +155,7 @@ def get_ner_tokens(model, testing_loader, device):
             for outer_index, array_list in enumerate(pred_prob):
                 # average_max_val, max_val, no_of_words_for_index = 0, 0, 0
                 b_is_set = False
-                b_set_on = 0
+                # b_set_on = 0
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index < no_of_words_array[outer_index] ):
@@ -181,14 +197,20 @@ def start(trained_model, ner_file):
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    test_generated = sen_generator(ner_file, stopwords, wordnet_lemmatizer)
-    test_sentences = test_generated[0]
-    test_targets = test_generated[1]
+    test_sentences= just_sentences(ner_file, stopwords, wordnet_lemmatizer)
+    # test_sentences = test_generated[0]
+    # test_targets = test_generated[1]
+
+    # testing_set = CustomDataset(
+    #     tokenizer=tokenizer,
+    #     sentences=test_sentences,
+    #     labels=test_targets, 
+    #     max_len=200
+    # )
 
     testing_set = CustomDataset(
         tokenizer=tokenizer,
         sentences=test_sentences,
-        labels=test_targets, 
         max_len=200
     )
 
