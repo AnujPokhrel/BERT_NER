@@ -236,6 +236,7 @@ def get_new_dataset(model, testing_loader, device, prob_threshold):
 
 def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    f1_scores_array = []
     print(f"The device is sss: {device}")
     # MODEL_NAME = 'dmis-lab/biobert-v1.1'
     # MODEL_NAME = 'm3rg-iitd/matscibert'
@@ -286,6 +287,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
+    loops_run = 0
     for i in range(LOOPS):        
         temp_dict = {}
         dict_name = 'loop' + str(i)
@@ -333,18 +335,29 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
-    torch.save(model.state_dict(), "200EpochLegit")
+        f1_scores_array.append(validation_old_dict[dict_name]['f1_score'])
+
+        if len(f1_scores_array) >= 3:
+            if (f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0:
+                loops_run = i + 1
+                break
+
+    model_save_name = str((loops_run +1) * EPOCHS)+ "_" + MODEL_NAME
+    validation_saved = str((loops_run +1) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
+    torch.save(model.state_dict(), model_save_name)
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
+    file1.write(f"Loops Ran: {loops_run}")
     file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}\n")
     file1.write(f"Learning Rate: {LEARNING_RATE}")
     file1.write(f"Time finished: {datetime.now()}")
     file1.close()
 
-    file1 = open("validation_otpt.txt", "w")
+    file1 = open(validation_saved, "w")
     file1.write(f"{validation_old_dict}")
     file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
+    file1.write(f"Loops Ran: {loops_run}")
     file1.write(f"Learning Rate: {LEARNING_RATE}")
     file1.write(f"Time finished: {datetime.now()}")
     file1.close()
