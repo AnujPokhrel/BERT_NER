@@ -224,7 +224,7 @@ def start(trained_model, ner_file):
 
     ner_tokens = get_ner_tokens(model, testing_loader, device)
 
-    file1 = open("Ner_tokensBC2GM.txt", 'a')
+    file1 = open("Ner_tokenspure.txt", 'w')
     for en, each in enumerate(ner_tokens[0]):
         split_decoded_token = tokenizer.decode(each).split(" ")
         sentence, split_garray = "", []
