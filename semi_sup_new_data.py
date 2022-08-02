@@ -1,8 +1,9 @@
 from ossaudiodev import SNDCTL_COPR_SENDMSG
+from tkinter import YES
 import transformers
 import torch
 from torch.utils.data import Dataset, DataLoader, RandomSampler, SequentialSampler
-import numpy as np
+import numpy as np 
 from sklearn.metrics import f1_score
 import pandas as pd
 import sklearn
@@ -42,7 +43,7 @@ def no_stopwords(text, stopwords):
 
 def read_csv_frequency(filename, key):
     data = pd.read_csv(filename, header=0)
-    return data[key].to_list
+    return data[key].to_list()
 
 #get individual sentences from the Data
 def sen_generator(filename, stopwords, wordnet_lemmatizer):
@@ -84,6 +85,9 @@ def plain_sentence_gen(filename, stopwords, wordnet_lemmatizer):
     return [sentences, sentence_array]
 
 def generate_tags(sentences, top_words, bi_grams, tri_grams):
+    #print(tri_grams.item())
+    print(type(tri_grams))
+    #print(type(tri_grams)
     tags = []
     for each in sentences:
         tags.append([2]* len(each))
@@ -308,7 +312,9 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     
     top_words = read_csv_frequency("dataset_pure/Tensors_PDE_top_words.csv", "Keyword")
     bi_gram = read_csv_frequency("dataset_pure/Tensors_PDE_bigrams.csv", "Bi-gram")
-    tri_gram = read_csv_frequency("dataset_pure/Tensors_PDE_bigrams.csv", "Tri-gram")
+    tri_gram = read_csv_frequency("dataset_pure/Tensors_PDE_trigrams.csv", "Tri-gram")
+
+    #    print(tri_gram)
 
     tags = generate_tags(train_generated[1], top_words, bi_gram, tri_gram)
 
@@ -434,4 +440,4 @@ if __name__=="__main__":
     parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
     parser.add_argument('-r', '--learning_rate', type=float, default=5e-5, help='Learning Rate')
     args = parser.parse_args()
-    start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
+    start(args.maxEpochs, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
