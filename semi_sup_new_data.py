@@ -286,7 +286,7 @@ def get_new_dataset(model, testing_loader, device, prob_threshold):
 
         return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets]
 
-def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
+def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     f1_scores_array = []
     print(f"The device is sss: {device}")
@@ -405,7 +405,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
         loop_counter += 1
         if len(f1_scores_array) >= 3:
-            if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= max_epochs):
+            if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= MAX_EPOCHS):
                 loops_run = loop_counter
                 break
 
@@ -415,7 +415,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     torch.save(model.state_dict(), model_save_name)
     file1 = open(SEMI_SUP_OTPT, 'w')
     file1.write(f"{result_dict}")
-    file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
+    file1.write(f"\n\n Max_Epoch: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")
     file1.write(f"Loops Ran: {loops_run}")
     file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}\n")
     file1.write(f"Learning Rate: {LEARNING_RATE}")
@@ -424,7 +424,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
     file1 = open(validation_saved, "w")
     file1.write(f"{validation_old_dict}")
-    file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
+    file1.write(f"\n\n Max_Epochs: {MAX_EPOCHS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
     file1.write(f"Loops Ran: {loops_run}")
     file1.write(f"Learning Rate: {LEARNING_RATE}")
     file1.write(f"Time finished: {datetime.now()}")
