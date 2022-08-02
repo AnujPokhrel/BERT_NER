@@ -35,7 +35,7 @@ def no_punctutation(word):
   return 1
 
 def no_stopwords(text, stopwords):
-    if text in stopwords:
+    if text in stopwords or text == '\n':
       return 0
     else:
       return 1
@@ -65,6 +65,50 @@ def sen_generator(filename, stopwords, wordnet_lemmatizer):
             # sen.append(word.lower())
             t.append(tag_converter(target))
   return [sentences, targets]
+
+def plain_sentence_gen(filename, stopwords, wordnet_lemmatizer):
+    f = open(filename, "r")
+    sentences = []
+    sentence_array = []
+    sen = []
+    for line in f.readlines():
+        words = line.split(" ")
+        for each in words:
+            if each == "\n" and len(sen) != 0:
+                sentences.append(' '.join(sen))
+                sentence_array.append(sen)
+                sen = []
+            else:
+                if no_punctutation(each) and no_stopwords(each, stopwords):
+                    sen.append(wordnet_lemmatizer.lemmatize(each.lower()))
+    return [sentences, sentence_array]
+
+def generate_tags(sentences, top_words, bi_grams, tri_grams):
+    tags = []
+    for each in sentences:
+        tags.append([2]* len(each))
+
+    for i, each in enumerate(sentences):
+        for j, words in enumerate(each):
+            a = ' '.join(each[j:j+3])
+            if a in tri_grams:
+                tags[i][j] = 0
+                tags[i][j+1] = 1
+                tags[i][j+2] = 1
+                
+    for i, each in enumerate(sentences):
+        for j, words in enumerate(each):
+            a = ' '.join(each[j:j+2])
+            if (a in bi_grams and tags[i][j] == 2 and tags[i][j+1] == 2):
+                tags[i][j] = 0
+                tags[i][j+1] = 1
+
+    for i, each in enumerate(sentences):
+        for j, words in enumerate(each):
+            if ((words in top_words) and tags[i][j] == 2):
+                tags[i][j] = 0 
+    
+    return tags
 
 #class for creating the custom dataset
 class CustomDataset(Dataset):
@@ -254,21 +298,31 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    # train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
+    # test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    # train_sentences = train_generated[0]
+    # train_targets = train_generated[1]
+
+    train_generated = plain_sentence_gen("dataset_pure/TT_PDE_Cross-abstracts.txt", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
-    train_targets = train_generated[1]
     
-    test_sentences = test_generated[0]
-    test_targets = test_generated[1]
+    top_words = read_csv_frequency("dataset_pure/Tensors_PDE_top_words.csv", "Keyword")
+    bi_gram = read_csv_frequency("dataset_pure/Tensors_PDE_bigrams.csv", "Bi-gram")
+    tri_gram = read_csv_frequency("dataset_pure/Tensors_PDE_bigrams.csv", "Tri-gram")
 
-    validation_percent = 0.9
+    tags = generate_tags(train_generated[1], top_words, bi_gram, tri_gram)
+
+    test_percent, validation_percent = 0.3, 0.9
     validation_size = int(validation_percent * len(train_sentences))
-    validation_sentences = train_sentences[validation_size:]
-    validation_targets = train_targets[validation_size:]
+    test_size = int(test_percent * len(train_sentences))
 
-    train_sentences = train_sentences[:validation_size]
-    train_targets = train_targets[:validation_size]
+    test_sentences = train_sentences[test_size:validation_size]
+    test_targets = tags[test_size:validation_size]
+    validation_sentences = train_sentences[validation_size:]
+    validation_targets = tags[validation_size:]
+
+    train_sentences = train_sentences[:test_size]
+    train_targets = tags[:test_size]
     
     print(len(train_sentences))
     print(len(test_sentences))
@@ -296,7 +350,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     while(True):
     #for i in range(LOOPS):        
         temp_dict = {}
-        dict_name = 'loop' + str(i)
+        dict_name = 'loop' + str(loop_counter)
 
         training_set = CustomDataset(
             tokenizer=tokenizer,
