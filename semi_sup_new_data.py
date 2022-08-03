@@ -151,6 +151,12 @@ class CustomDataset(Dataset):
     def __len__(self):
         return self.len
 
+#check if the f1 score is decreasing
+def decreasing_f1_scores(f1):
+    if f1[-2] > f1[-1] and f1[-3]>f1[-2] and f1[-4]>f1[-3]:
+        return 1
+
+    return 0
 
 #fn to calculate flat accuracy
 def flat_accuracy(preds, labels):
@@ -353,10 +359,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
-    loops_run = 0
-    loop_counter = 0
-    last_deep_copy = 0
-    best_f1_score = 0
+    loops_run, loop_counter, last_deep_copy, best_f1_score = 0,0,0,0
+    stop_semi_sup, semi_sup_saturated, semi_sup_stopped_at =  False, False, 0
     while(True):
     #for i in range(LOOPS):        
         temp_dict = {}
@@ -393,29 +397,44 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
         #model.load_state_dict(torch.load("200EpochsTrainedSemiSupLegit"))
         
-        prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
-        train_sentences.extend(prob_dataset[0])
-        train_targets.extend(prob_dataset[1])
-        test_sentences = prob_dataset[2]
-        test_targets = prob_dataset[3]
+        if stop_semi_sup == False:
+            prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
+            train_sentences.extend(prob_dataset[0])
+            train_targets.extend(prob_dataset[1])
+            test_sentences = prob_dataset[2]
+            test_targets = prob_dataset[3]
         
-        temp_dict['length_of_train'] = len(train_sentences)
-        temp_dict['length_of_test'] = len(test_sentences)
-        temp_dict['no_of_epochs'] = EPOCHS
-        result_dict[dict_name] = temp_dict
+            temp_dict['length_of_train'] = len(train_sentences)
+            temp_dict['length_of_test'] = len(test_sentences)
+            temp_dict['no_of_epochs'] = EPOCHS
+            result_dict[dict_name] = temp_dict
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
         f1_scores_array.append(validation_old_dict[dict_name]['f1_score'])
 
         loop_counter += 1
-        if len(f1_scores_array) >= 3:
-            if (f1_scores_array[-1] > best_f1_score):
-                best_f1_score = f1_scores_array[-1]
-                best_model = copy.deepcopy(model)
-                last_deep_copy = loop_counter * EPOCHS
-            #if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= MAX_EPOCHS):
-            if(loop_counter * EPOCHS >= MAX_EPOCHS):
+        if (f1_scores_array[-1] > best_f1_score):
+            best_f1_score = f1_scores_array[-1]
+            best_model = copy.deepcopy(model)
+            last_deep_copy = loop_counter * EPOCHS
+        if len(f1_scores_array) >= 4:
+            #if(f1_scores_array[-1] > best_f1_score):
+                # best_f1_score = f1_scores_array[-1]
+                # best_model = copy.deepcopy(model)
+                # last_deep_copy = loop_counter * EPOCHS
+
+            if (decreasing_f1_scores(f1_scores_array)):
+                stop_semi_sup = True
+                if semi_sup_stopped_at != 0:
+                    semi_sup_stopped_at = loop_counter
+            elif (decreasing_f1_scores(f1_scores_array) and ((loop_counter-semi_sup_stopped_at) > 4)):
+                semi_sup_saturated = True
+            else:
+                semi_sup_stopped_at = 0
+                semi_sup_saturated = False
+
+            if ((decreasing_f1_scores(f1_scores_array) and semi_sup_saturated)  or (loop_counter*EPOCHS >= MAX_EPOCHS)):
                 loops_run = loop_counter
                 break
 
