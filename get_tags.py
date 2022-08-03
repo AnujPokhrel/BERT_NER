@@ -161,13 +161,13 @@ def get_ner_tokens(model, testing_loader, device):
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index < no_of_words_array[outer_index] ):
-                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.7):
+                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.45):
                                 counter_for_inner_array += 1
                                 counter_for_b += 1
                                 selected_tokens_arr.append([ids[outer_index][inner_index].item()])
                                 b_is_set = True
                                 b_set_on = inner_index
-                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.7):
+                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.45):
                                 counter_for_inner_array += 1
                                 counter_for_i += 1
                                 selected_tokens_arr[-1].append(ids[outer_index][inner_index].item())
@@ -191,7 +191,7 @@ def start(trained_model, ner_file):
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    model.load_state_dict(torch.load(trained_model))
+    # model.load_state_dict(torch.load(trained_model))
 
     nltk.download('stopwords')
     nltk.download('wordnet')
@@ -228,10 +228,13 @@ def start(trained_model, ner_file):
 
     file1 = open("Ner_tokenspure.txt", 'w')
     for en, each in enumerate(ner_tokens[0]):
+        print(each)
         split_decoded_token = tokenizer.decode(each).split(" ")
         sentence, split_garray = "", []
-        for word in split_decoded_token:
-            if (word[0] == '#' or word == "[SEP]" or word == "[PAD]") != True:
+        for index, word in enumerate(split_decoded_token):
+            if (word[0:2] == '##' and index != 0):
+                split_garray[-1] = split_garray[-1] + word[2:]
+            if (word[0] == '#' or word == "[SEP]" or word == "[PAD]" or word=="[CLS]") != True:
                 split_garray.append(word)
         
         for index, word in enumerate(split_garray):
@@ -257,9 +260,9 @@ if __name__=="__main__":
     parser.add_argument('-m', '--model', type=str, default='200EpochsLegit', help='Trained Model')
     parser.add_argument('-f', '--file', type=str, default='', help='File to extract NERs from')
     args = parser.parse_args()
-    model_exists = exists(args.model)
+    #model_exists = exists(args.model)
     ner_file_exists = exists(args.file)
-    if model_exists and ner_file_exists:
-        start(args.model, args.file)
-    else:
-        print("Provided Files don't exist")
+    #if model_exists and ner_file_exists:
+    start(args.model, args.file)
+    #else:
+     #   print("Provided Files don't exist")
