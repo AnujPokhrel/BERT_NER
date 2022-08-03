@@ -40,20 +40,22 @@ def no_stopwords(text, stopwords):
     else:
       return 1
 
-def just_sentences(filename, stopwords, wordnet_lemmatizer):
+def plain_sentence_gen(filename, stopwords, wordnet_lemmatizer):
     f = open(filename, "r")
     sentences = []
+    sentence_array = []
     sen = []
     for line in f.readlines():
         words = line.split(" ")
         for each in words:
-            if each == "\n":
+            if each == "\n" and len(sen)!= 0:
                 sentences.append(' '.join(sen))
+                sentence_array.append(sen)
                 sen = []
             else:
                 if no_punctutation(each) and no_stopwords(each, stopwords):
                     sen.append(wordnet_lemmatizer.lemmatize(each.lower()))
-    return sentences
+    return [sentences, sentence_array]
 
 #get individual sentences from the Data
 def sen_generator(filename, stopwords, wordnet_lemmatizer):
@@ -159,13 +161,13 @@ def get_ner_tokens(model, testing_loader, device):
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index < no_of_words_array[outer_index] ):
-                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.9975):
+                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.7):
                                 counter_for_inner_array += 1
                                 counter_for_b += 1
                                 selected_tokens_arr.append([ids[outer_index][inner_index].item()])
                                 b_is_set = True
                                 b_set_on = inner_index
-                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.9975):
+                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.7):
                                 counter_for_inner_array += 1
                                 counter_for_i += 1
                                 selected_tokens_arr[-1].append(ids[outer_index][inner_index].item())
@@ -197,7 +199,7 @@ def start(trained_model, ner_file):
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    test_sentences= just_sentences(ner_file, stopwords, wordnet_lemmatizer)
+    test_sentences= plain_sentence_gen(ner_file, stopwords, wordnet_lemmatizer)[0]
     # test_sentences = test_generated[0]
     # test_targets = test_generated[1]
 
@@ -228,18 +230,18 @@ def start(trained_model, ner_file):
     for en, each in enumerate(ner_tokens[0]):
         split_decoded_token = tokenizer.decode(each).split(" ")
         sentence, split_garray = "", []
-        for each in split_decoded_token:
-            if (each[0] == '#' or each == "[SEP]" or each == "[PAD]") != True:
-                split_garray.append(each)
+        for word in split_decoded_token:
+            if (word[0] == '#' or word == "[SEP]" or word == "[PAD]") != True:
+                split_garray.append(word)
         
-        for index, each in enumerate(split_garray):
+        for index, word in enumerate(split_garray):
             if index == 0:
-                sentence = sentence + each
+                sentence = sentence + word
             else:
-                sentence = sentence + " " + each
+                sentence = sentence + " " + word
 
         if sentence != "":
-            file1.write(f"{tokenizer.decode(each)} \n")
+            file1.write(f"{sentence} \n")
         
     file1.write(f"Coutner for b: {ner_tokens[1]} \n")
     file1.write(f"Counter for i: {ner_tokens[2]} \n")

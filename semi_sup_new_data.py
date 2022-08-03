@@ -18,6 +18,7 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 import sys
 import argparse
+import copy
 
 #converting B,I and O to numerical values
 def tag_converter(t):
@@ -295,6 +296,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     MODEL_NAME = 'bert-base-cased'
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
+    best_model = copy.deepcopy(model)
 
     nltk.download('stopwords')
     nltk.download('wordnet')
@@ -327,8 +329,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     validation_sentences = train_sentences[validation_size:]
     validation_targets = tags[validation_size:]
 
-    train_sentences = train_sentences[:test_size]
-    train_targets = tags[:test_size]
+    train_sentences = train_sentences[:validation_size]
+    train_targets = tags[:validation_size]
     
     print(len(train_sentences))
     print(len(test_sentences))
@@ -353,6 +355,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
     loops_run = 0
     loop_counter = 0
+    last_deep_copy = 0
+    best_f1_score = 0
     while(True):
     #for i in range(LOOPS):        
         temp_dict = {}
@@ -388,6 +392,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
         
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
         #model.load_state_dict(torch.load("200EpochsTrainedSemiSupLegit"))
+        
         prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
         train_sentences.extend(prob_dataset[0])
         train_targets.extend(prob_dataset[1])
@@ -405,29 +410,37 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
 
         loop_counter += 1
         if len(f1_scores_array) >= 3:
-            if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= MAX_EPOCHS):
+            if (f1_scores_array[-1] > best_f1_score):
+                best_f1_score = f1_scores_array[-1]
+                best_model = copy.deepcopy(model)
+                last_deep_copy = loop_counter * EPOCHS
+            #if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= MAX_EPOCHS):
+            if(loop_counter * EPOCHS >= MAX_EPOCHS):
                 loops_run = loop_counter
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME
+    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME 
     validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
+    semi_sup_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_semisup.txt"
     torch.save(model.state_dict(), model_save_name)
-    file1 = open(SEMI_SUP_OTPT, 'w')
+    file1 = open(semi_sup_otpt, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Max_Epoch: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")
-    file1.write(f"Loops Ran: {loops_run}")
+    file1.write(f"Loops Ran: {loops_run}\n")
     file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}\n")
-    file1.write(f"Learning Rate: {LEARNING_RATE}")
-    file1.write(f"Time finished: {datetime.now()}")
+    file1.write(f"Learning Rate: {LEARNING_RATE}\n")
+    file1.write(f"Time finished: {datetime.now()}\n")
+    file1.write(f"Last deep copy after: {last_deep_copy}\n")
     file1.close()
 
     file1 = open(validation_saved, "w")
     file1.write(f"{validation_old_dict}")
     file1.write(f"\n\n Max_Epochs: {MAX_EPOCHS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
-    file1.write(f"Loops Ran: {loops_run}")
-    file1.write(f"Learning Rate: {LEARNING_RATE}")
-    file1.write(f"Time finished: {datetime.now()}")
+    file1.write(f"Loops Ran: {loops_run}\n")
+    file1.write(f"Learning Rate: {LEARNING_RATE}\n")
+    file1.write(f"Time finished: {datetime.now()}\n")
+    file1.write(f"Last deep copy after: {last_deep_copy}\n")
     file1.close()
 
 

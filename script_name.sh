@@ -7,4 +7,4 @@
 #SBATCH --time=2-00:00:00
 
 conda activate anujnlp
-python semi_supervised.py -l 20 -e 10
+python semi_sup_new_data.py -m 30 -e 2
