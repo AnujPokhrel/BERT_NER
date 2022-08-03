@@ -423,7 +423,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME 
     validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
     semi_sup_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_semisup.txt"
-    torch.save(model.state_dict(), model_save_name)
+    torch.save(best_model.state_dict(), model_save_name)
     file1 = open(semi_sup_otpt, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Max_Epoch: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")

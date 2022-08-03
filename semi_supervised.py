@@ -17,6 +17,7 @@ import nltk
 from nltk.stem import WordNetLemmatizer
 import sys
 import argparse
+import copy
 
 #converting B,I and O to numerical values
 def tag_converter(t):
@@ -102,6 +103,12 @@ class CustomDataset(Dataset):
     def __len__(self):
         return self.len
 
+#check if the f1 score is decreasing
+def decreasing_f1_scores(f1):
+    if f1[-2] > f1[-1] and f1[-3]>f1[-2] and f1[-4]>f1[-3]:
+        return 1
+
+    return 0
 
 #fn to calculate flat accuracy
 def flat_accuracy(preds, labels):
@@ -238,7 +245,7 @@ def get_new_dataset(model, testing_loader, device, prob_threshold):
 
         return [for_train_sentences, for_train_targets, new_test_sentences, new_test_targets]
 
-def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
+def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RATE):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     f1_scores_array = []
     print(f"The device is sss: {device}")
@@ -248,6 +255,7 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
+    best_model = copy.deepcopy(model)
     nltk.download('stopwords')
     nltk.download('wordnet')
     nltk.download('omw-1.4')
@@ -259,17 +267,21 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
     train_sentences = train_generated[0]
     train_targets = train_generated[1]
     
-    test_sentences = test_generated[0]
-    test_targets = test_generated[1]
+    test_sentences1 = test_generated[0]
+    test_targets1 = test_generated[1]
 
     validation_percent = 0.9
+    train_percent = 0.3
     validation_size = int(validation_percent * len(train_sentences))
+    train_size = int(validation_percent * len(train_sentences))
     validation_sentences = train_sentences[validation_size:]
     validation_targets = train_targets[validation_size:]
 
-    train_sentences = train_sentences[:validation_size]
-    train_targets = train_targets[:validation_size]
+    train_sentences = train_sentences[:train_size]
+    train_targets = train_targets[:train_size]
     
+    test_sentences = test_sentences1[:train_size]
+    test_targets = test_targets1[:train_size]
     print(len(train_sentences))
     print(len(test_sentences))
     #setting up the optimizer and the learning rate
@@ -291,12 +303,12 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
 
     result_dict, validation_dict, validation_old_dict = {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
-    loops_run = 0
-    loop_counter = 0
+    loops_run, loop_counter, last_deep_copy, best_f1_score = 0,0,0,0
+    stop_semi_sup, semi_sup_saturated, semi_sup_stopped_at =  False, False, 0
     while(True):
     #for i in range(LOOPS):        
         temp_dict = {}
-        dict_name = 'loop' + str(i)
+        dict_name = 'loop' + str(loop_counter)
 
         training_set = CustomDataset(
             tokenizer=tokenizer,
@@ -328,46 +340,69 @@ def start(LOOPS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNING_RA
         
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
         #model.load_state_dict(torch.load("200EpochsTrainedSemiSupLegit"))
-        prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
-        train_sentences.extend(prob_dataset[0])
-        train_targets.extend(prob_dataset[1])
-        test_sentences = prob_dataset[2]
-        test_targets = prob_dataset[3]
+        if stop_semi_sup == False:
+            prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
+            train_sentences.extend(prob_dataset[0])
+            train_targets.extend(prob_dataset[1])
+            test_sentences = prob_dataset[2]
+            test_targets = prob_dataset[3]
         
-        temp_dict['length_of_train'] = len(train_sentences)
-        temp_dict['length_of_test'] = len(test_sentences)
-        temp_dict['no_of_epochs'] = EPOCHS
-        result_dict[dict_name] = temp_dict
+            temp_dict['length_of_train'] = len(train_sentences)
+            temp_dict['length_of_test'] = len(test_sentences)
+            temp_dict['no_of_epochs'] = EPOCHS
+            result_dict[dict_name] = temp_dict
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
         f1_scores_array.append(validation_old_dict[dict_name]['f1_score'])
 
         loop_counter += 1
-        if len(f1_scores_array) >= 3:
-            if ((f1_scores_array[-2] - f1_scores_array[-1]) > 0 and (f1_scores_array[-3] - f1_scores_array[-2]) > 0) or (loop_counter*EPOCHS >= max_epochs):
+        if (f1_scores_array[-1] > best_f1_score):
+            best_f1_score = f1_scores_array[-1]
+            best_model = copy.deepcopy(model)
+            last_deep_copy = loop_counter * EPOCHS
+        if len(f1_scores_array) >= 4:
+            #if(f1_scores_array[-1] > best_f1_score):
+                # best_f1_score = f1_scores_array[-1]
+                # best_model = copy.deepcopy(model)
+                # last_deep_copy = loop_counter * EPOCHS
+
+            if (decreasing_f1_scores(f1_scores_array)):
+                stop_semi_sup = True
+                if semi_sup_stopped_at != 0:
+                    semi_sup_stopped_at = loop_counter
+            elif (decreasing_f1_scores(f1_scores_array) and ((loop_counter-semi_sup_stopped_at) > 4)):
+                semi_sup_saturated = True
+            else:
+                semi_sup_stopped_at = 0
+                semi_sup_saturated = False
+
+            if ((decreasing_f1_scores(f1_scores_array) and semi_sup_saturated)  or (loop_counter*EPOCHS >= MAX_EPOCHS)):
                 loops_run = loop_counter
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME
-    validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
-    torch.save(model.state_dict(), model_save_name)
-    file1 = open(SEMI_SUP_OTPT, 'w')
+    model_save_name = str((loops_run) * EPOCHS)+ "_BC2GM" + MODEL_NAME
+    validation_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_validation.txt"
+    semi_sup_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_semisup.txt"
+    torch.save(best_model.state_dict(), model_save_name)
+    file1 = open(semi_sup_saved, 'w')
     file1.write(f"{result_dict}")
-    file1.write(f"\n\n Loops: {LOOPS}\n Epochs: {EPOCHS}\n")
+    file1.write(f"\n\n max Epochs: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")
     file1.write(f"Loops Ran: {loops_run}")
     file1.write(f"Probability Threshold: {PROB_THRES}\n Model: {MODEL_NAME}\n")
-    file1.write(f"Learning Rate: {LEARNING_RATE}")
-    file1.write(f"Time finished: {datetime.now()}")
+    file1.write(f"Learning Rate: {LEARNING_RATE}\n")
+    file1.write(f"Time finished: {datetime.now()}\n")
+    file1.write(f"Last deep copy: {last_deep_copy}\n")
     file1.close()
 
     file1 = open(validation_saved, "w")
     file1.write(f"{validation_old_dict}")
-    file1.write(f"\n\n Loops: {LOOPS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
-    file1.write(f"Loops Ran: {loops_run}")
-    file1.write(f"Learning Rate: {LEARNING_RATE}")
-    file1.write(f"Time finished: {datetime.now()}")
+    file1.write(f"\n\n max Epochs: {MAX_EPOCHS} \n Epochs: {EPOCHS} \n Prob Thers: {PROB_THRES} \n Model: {MODEL_NAME}\n")
+    file1.write(f"Loops Ran: {loops_run}\n")
+    file1.write(f"Learning Rate: {LEARNING_RATE}\n")
+    file1.write(f"Time finished: {datetime.now()}\n")
+    file1.write(f"Last deep copy after: {last_deep_copy}\n")
     file1.close()
 
 
@@ -380,4 +415,4 @@ if __name__=="__main__":
     parser.add_argument('-p', '--prob_thres', type=float, default=0.9975, help='Probability threshold')
     parser.add_argument('-r', '--learning_rate', type=float, default=5e-5, help='Learning Rate')
     args = parser.parse_args()
-    start(args.loops, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
+    start(args.maxEpochs, args.epochs, args.semisup_outfile, args.validscores_outfile, args.prob_thres, args.learning_rate)
