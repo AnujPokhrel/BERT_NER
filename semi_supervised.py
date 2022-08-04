@@ -361,12 +361,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
             best_f1_score = f1_scores_array[-1]
             best_model = copy.deepcopy(model)
             last_deep_copy = loop_counter * EPOCHS
+        
         if len(f1_scores_array) >= 4:
-            #if(f1_scores_array[-1] > best_f1_score):
-                # best_f1_score = f1_scores_array[-1]
-                # best_model = copy.deepcopy(model)
-                # last_deep_copy = loop_counter * EPOCHS
-
             if (decreasing_f1_scores(f1_scores_array)):
                 stop_semi_sup = True
                 if semi_sup_stopped_at != 0:
@@ -382,10 +378,12 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "_BC2GM" + MODEL_NAME
+    model_save_name = str((loops_run) * EPOCHS)+ "best_BC2GM" + MODEL_NAME
+    model_save_name1 = str((loops_run) * EPOCHS)+ "_BC2GM" + MODEL_NAME
     validation_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_validation.txt"
     semi_sup_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_semisup.txt"
     torch.save(best_model.state_dict(), model_save_name)
+    torch.save(model.state_dict(), model_save_name1)
     file1 = open(semi_sup_saved, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n max Epochs: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")
