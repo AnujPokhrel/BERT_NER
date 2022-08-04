@@ -262,8 +262,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     stopwords = nltk.corpus.stopwords.words('english')
     wordnet_lemmatizer = WordNetLemmatizer()
 
-    train_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
-    test_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
+    test_generated = sen_generator("BC2GM/train.tsv", stopwords, wordnet_lemmatizer)
+    train_generated = sen_generator("BC2GM/test.tsv", stopwords, wordnet_lemmatizer)
     train_sentences = train_generated[0]
     train_targets = train_generated[1]
     
@@ -340,17 +340,17 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
         
         model = wrapper_for_train(EPOCHS, model, training_loader, device, optimizer)
         #model.load_state_dict(torch.load("200EpochsTrainedSemiSupLegit"))
-        if stop_semi_sup == False:
-            prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
-            train_sentences.extend(prob_dataset[0])
-            train_targets.extend(prob_dataset[1])
-            test_sentences = prob_dataset[2]
-            test_targets = prob_dataset[3]
+        #if stop_semi_sup == False:
+        prob_dataset = get_new_dataset(model, testing_loader, device, PROB_THRES)
+        train_sentences.extend(prob_dataset[0])
+        train_targets.extend(prob_dataset[1])
+        test_sentences = prob_dataset[2]
+        test_targets = prob_dataset[3]
         
-            temp_dict['length_of_train'] = len(train_sentences)
-            temp_dict['length_of_test'] = len(test_sentences)
-            temp_dict['no_of_epochs'] = EPOCHS
-            result_dict[dict_name] = temp_dict
+        temp_dict['length_of_train'] = len(train_sentences)
+        temp_dict['length_of_test'] = len(test_sentences)
+        temp_dict['no_of_epochs'] = EPOCHS
+        result_dict[dict_name] = temp_dict
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
@@ -378,10 +378,10 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "best_BC2GM" + MODEL_NAME
-    model_save_name1 = str((loops_run) * EPOCHS)+ "_BC2GM" + MODEL_NAME
-    validation_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_validation.txt"
-    semi_sup_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + "_semisup.txt"
+    model_save_name = str((loops_run) * EPOCHS)+ "best_BC2GM" + MODEL_NAME + str(LEARNING_RATE)
+    model_save_name1 = str((loops_run) * EPOCHS)+ "_BC2GM" + MODEL_NAME + str(LEARNING_RATE)
+    validation_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + str(LEARNING_RATE) + "_validation.txt"
+    semi_sup_saved = str((loops_run) * EPOCHS) + "_BC2GM" + MODEL_NAME + str(LEARNING_RATE) + "_semisup.txt"
     torch.save(best_model.state_dict(), model_save_name)
     torch.save(model.state_dict(), model_save_name1)
     file1 = open(semi_sup_saved, 'w')
