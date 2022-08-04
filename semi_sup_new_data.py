@@ -334,8 +334,8 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     validation_sentences = train_sentences[validation_size:]
     validation_targets = tags[validation_size:]
 
-    train_sentences = train_sentences[:validation_size]
-    train_targets = tags[:validation_size]
+    train_sentences = train_sentences[:test_size]
+    train_targets = tags[:test_size]
     
     print(len(train_sentences))
     print(len(test_sentences))

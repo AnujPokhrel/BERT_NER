@@ -1,4 +1,4 @@
-{'loop-1': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 0}, 'loop0': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop1': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop2': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop3': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop4': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop5': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop6': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop7': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop8': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop9': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop10': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop11': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop12': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop13': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop14': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop15': {'length_of_train': 38, 'length_of_test': 26, 'no_of_epochs': 2}}
+{'loop-1': {'length_of_train': 12, 'length_of_test': 26, 'no_of_epochs': 0}, 'loop0': {'length_of_train': 12, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop1': {'length_of_train': 12, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop2': {'length_of_train': 12, 'length_of_test': 26, 'no_of_epochs': 2}, 'loop3': {'length_of_train': 12, 'length_of_test': 26, 'no_of_epochs': 2}}
 
  Max_Epoch: 200
  Epochs: 2
@@ -6,5 +6,5 @@ Loops Ran: 100
 Probability Threshold: 0.7
  Model: bert-base-cased
 Learning Rate: 1e-05
-Time finished: 2022-08-03 23:39:56.026461
-Last deep copy after: 54
+Time finished: 2022-08-04 08:48:33.656241
+Last deep copy after: 50
