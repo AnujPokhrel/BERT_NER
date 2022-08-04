@@ -439,10 +439,11 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME
-    model_save_mane = str((loops_run) * EPOCHS)+ "_Final" + MODEL_NAME
-    validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
-    semi_sup_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_semisup.txt"
+    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME + str(PROB_THRES) + str(LEARNING_RATE)
+    model_save_mane = str((loops_run) * EPOCHS)+ "_Final" + MODEL_NAME + str(PROB_THRES) + str(LEARNING_RATE)
+    validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + str(PROB_THRES) + str(LEARNING_RATE) + "_validation.txt"
+    semi_sup_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + str(PROB_THRES) + str(LEARNING_RATE) + "_semisup.txt"
+    training_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + str(PROB_THRES) + str(LEARNING_RATE) + "_training_score.txt"
     torch.save(best_model.state_dict(), model_save_name)
     torch.save(model.state_dict(), model_save_mane) 
     file1 = open(semi_sup_otpt, 'w')
@@ -464,7 +465,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     file1.write(f"Last deep copy after: {last_deep_copy}\n")
     file1.close()
     
-    file1 = open("training_scores.json", "w")
+    file1 = open(training_otpt, "w")
     file1.write(f"{training_old_dict}")
     file1.close()
 
