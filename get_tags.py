@@ -117,7 +117,7 @@ class CustomDataset(Dataset):
         return self.len
 
 #get f1 score, print accuracy and loss
-def get_ner_tokens(model, testing_loader, device):
+def get_ner_tokens(model, testing_loader, device, PROB_THRES):
     model.eval()
     pred_prob_list = []
     # predictions , true_labels = [], []
@@ -161,13 +161,13 @@ def get_ner_tokens(model, testing_loader, device):
                 for inner_index, x in enumerate(array_list):
                     try:
                         if (inner_index < no_of_words_array[outer_index] ):
-                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > 0.45):
+                            if ((np.argmax(x).item()) == 0 and np.max(x).item() > PROB_THRES):
                                 counter_for_inner_array += 1
                                 counter_for_b += 1
                                 selected_tokens_arr.append([ids[outer_index][inner_index].item()])
                                 b_is_set = True
                                 b_set_on = inner_index
-                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > 0.45):
+                            elif ((np.argmax(x).item()) == 1 and b_is_set == True and np.max(x).item() > PROB_THRES*0.75):
                                 counter_for_inner_array += 1
                                 counter_for_i += 1
                                 selected_tokens_arr[-1].append(ids[outer_index][inner_index].item())
@@ -182,7 +182,7 @@ def get_ner_tokens(model, testing_loader, device):
         # print(len())
         return [selected_tokens_arr, counter_for_b, counter_for_i, counter_for_o]
 
-def start(trained_model, ner_file):
+def start(trained_model, ner_file, PROB_THRES):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # MODEL_NAME = 'dmis-lab/biobert-v1.1'
@@ -191,7 +191,7 @@ def start(trained_model, ner_file):
     model = transformers.BertForTokenClassification.from_pretrained(MODEL_NAME, num_labels=3).to(device)
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
 
-    # model.load_state_dict(torch.load(trained_model))
+    model.load_state_dict(torch.load(trained_model))
 
     nltk.download('stopwords')
     nltk.download('wordnet')
@@ -224,11 +224,11 @@ def start(trained_model, ner_file):
     # training_loader = DataLoader(training_set, **train_params)
     testing_loader =  DataLoader(testing_set, **test_params)
 
-    ner_tokens = get_ner_tokens(model, testing_loader, device)
+    ner_tokens = get_ner_tokens(model, testing_loader, device, PROB_THRES)
 
     file1 = open("Ner_tokenspure.txt", 'w')
     for en, each in enumerate(ner_tokens[0]):
-        print(each)
+        #print(each)
         split_decoded_token = tokenizer.decode(each).split(" ")
         sentence, split_garray = "", []
         for index, word in enumerate(split_decoded_token):
@@ -250,8 +250,8 @@ def start(trained_model, ner_file):
     file1.write(f"Counter for i: {ner_tokens[2]} \n")
     file1.write(f"Counter for o: {ner_tokens[3]} \n")
     file1.write(f"Model used: {MODEL_NAME}\n")
-    file1.write(f"saved model used: {trained_model}")
-    file1.write(f"tokens calcualted of ")
+    file1.write(f"saved model used: {trained_model}\n")
+    file1.write(f"prob thes: {PROB_THRES} ")
     file1.close()
 
 
@@ -259,10 +259,11 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', '--model', type=str, default='200EpochsLegit', help='Trained Model')
     parser.add_argument('-f', '--file', type=str, default='', help='File to extract NERs from')
+    parser.add_argument('-p', '--probThres', type=float, default='0.9975', help='Probability threshold to work with')
     args = parser.parse_args()
     #model_exists = exists(args.model)
     ner_file_exists = exists(args.file)
     #if model_exists and ner_file_exists:
-    start(args.model, args.file)
+    start(args.model, args.file, args.probThres)
     #else:
      #   print("Provided Files don't exist")

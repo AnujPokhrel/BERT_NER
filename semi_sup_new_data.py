@@ -168,7 +168,6 @@ def flat_accuracy(preds, labels):
 def train(epoch, model, training_loader, device, optimizer):
     model.train()
     f1_scores = []
-    print("new epoch")
     for i,data in enumerate(training_loader, 0):
         ids = data['ids'].to(device)
         mask = data['mask'].to(device)
@@ -179,7 +178,7 @@ def train(epoch, model, training_loader, device, optimizer):
         # optimizer.zero_grad()
         if i%300==0:
             print(f'Epoch: {epoch} Loss:  {loss.item()}')
-        
+            
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -357,7 +356,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     
     validation_loader =  DataLoader(validation_set, **validation_params)
 
-    result_dict, validation_dict, validation_old_dict = {}, {}, {}
+    result_dict, validation_dict, validation_old_dict, training_old_dict = {}, {}, {}, {}
     result_dict['loop-1'] = {'length_of_train': len(train_sentences), 'length_of_test': len(test_sentences), 'no_of_epochs': 0}
     loops_run, loop_counter, last_deep_copy, best_f1_score = 0,0,0,0
     stop_semi_sup, semi_sup_saturated, semi_sup_stopped_at =  False, False, 0
@@ -411,6 +410,7 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
 
         # validation_dict[dict_name] = get_scores(model, training_loader, device)
         validation_old_dict[dict_name] = get_scores(model, validation_loader, device, EPOCHS)
+        training_old_dict[dict_name] = get_scores(model, training_loader, device, EPOCHS)
         f1_scores_array.append(validation_old_dict[dict_name]['f1_score'])
 
         loop_counter += 1
@@ -439,10 +439,12 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
                 break
 
 
-    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME 
+    model_save_name = str((loops_run) * EPOCHS)+ "_" + MODEL_NAME
+    model_save_mane = str((loops_run) * EPOCHS)+ "_Final" + MODEL_NAME
     validation_saved = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_validation.txt"
     semi_sup_otpt = str((loops_run) * EPOCHS) + "_" + MODEL_NAME + "_semisup.txt"
     torch.save(best_model.state_dict(), model_save_name)
+    torch.save(model.state_dict(), model_save_mane) 
     file1 = open(semi_sup_otpt, 'w')
     file1.write(f"{result_dict}")
     file1.write(f"\n\n Max_Epoch: {MAX_EPOCHS}\n Epochs: {EPOCHS}\n")
@@ -461,7 +463,10 @@ def start(MAX_EPOCHS, EPOCHS, SEMI_SUP_OTPT, VALIDATION_OTPT, PROB_THRES, LEARNI
     file1.write(f"Time finished: {datetime.now()}\n")
     file1.write(f"Last deep copy after: {last_deep_copy}\n")
     file1.close()
-
+    
+    file1 = open("training_scores.json", "w")
+    file1.write(f"{training_old_dict}")
+    file1.close()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
